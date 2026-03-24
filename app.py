@@ -10,56 +10,68 @@ else:
     st.stop()
 
 st.set_page_config(page_title="Zauber-Stift", page_icon="🪄")
+
+# CSS für einen riesigen, kindgerechten Button
+st.markdown("""
+    <style>
+    div.stButton > button:first-child {
+        background-color: #FF4B4B;
+        color: white;
+        font-size: 30px;
+        height: 150px;
+        width: 100%;
+        border-radius: 20px;
+        border: 5px solid #FFD700;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 st.title("✨ Dein Zauber-Stift")
 
-# WICHTIG: Kurze Anleitung für das Kind (kann man später als Icon machen)
-st.write("Mach ein Foto und ich erzähle dir, was ich sehe!")
-
-bild_datei = st.camera_input("Tippe hier für das Foto!")
+bild_datei = st.camera_input("1. Foto machen")
 
 if bild_datei:
-    # Bild verarbeiten
     bytes_data = bild_datei.getvalue()
     base64_image = base64.b64encode(bytes_data).decode('utf-8')
 
-    with st.spinner("Ich schaue es mir an... 🧙‍♂️"):
-        try:
-            # 1. KI ANFRAGE (GPT-4o)
-            response = client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": "Erkläre kurz für ein 4-jähriges Kind, was auf dem Bild ist. Max 2 Sätze. Antworte direkt dem Kind."},
+    # Wir speichern das Ergebnis in der "Session", damit es nicht verschwindet
+    if 'audio_b64' not in st.session_state:
+        with st.spinner("Ich schaue es mir an... 🧙‍♂️"):
+            try:
+                # KI ANFRAGE
+                response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=[
+                        {"role": "user", "content": [
+                            {"type": "text", "text": "Erkläre kurz für ein 4-jähriges Kind, was auf dem Bild ist. Max 2 Sätze."},
                             {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                        ],
-                    }
-                ],
-            )
-            text_antwort = response.choices[0].message.content
-            st.subheader(text_antwort) # Großer Text für die Kinder
+                        ]}
+                    ],
+                )
+                text_antwort = response.choices[0].message.content
+                st.session_state['text_antwort'] = text_antwort
 
-            # 2. STIMME ERZEUGEN
-            audio_response = client.audio.speech.create(
-                model="tts-1",
-                voice="shimmer",
-                input=text_antwort
-            )
-            
-            # 3. DER ULTIMATIVE AUTOPLAY-TRICK
-            audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
-            
-            # Dieser HTML-Code erzwingt das Abspielen
+                # STIMME ERZEUGEN
+                audio_response = client.audio.speech.create(
+                    model="tts-1",
+                    voice="shimmer",
+                    input=text_antwort
+                )
+                st.session_state['audio_b64'] = base64.b64encode(audio_response.content).decode('utf-8')
+            except Exception as e:
+                st.error(f"Fehler: {e}")
+
+    # Wenn alles bereit ist, zeigen wir den Text und den RIESIGEN Knopf
+    if 'audio_b64' in st.session_state:
+        st.subheader(st.session_state['text_antwort'])
+        
+        # Der magische Knopf für das Kind
+        if st.button("🔊 HÖREN!"):
+            # HTML für sofortiges Abspielen nach Klick
             audio_html = f"""
-                <audio autoplay="true">
-                    <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+                <audio autoplay>
+                    <source src="data:audio/mp3;base64,{st.session_state['audio_b64']}" type="audio/mp3">
                 </audio>
             """
             st.markdown(audio_html, unsafe_allow_html=True)
-
-        except Exception as e:
-            st.error(f"Fehler: {e}")
-
-with st.expander("Info für Eltern"):
-    st.write("Hinweis: Falls kein Ton kommt, prüfen Sie, ob das Handy auf 'Lautlos' steht oder die Medienlautstärke leise ist.")
+            st.balloons() # Ein bisschen Spaß für das Kind!
