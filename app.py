@@ -3,45 +3,35 @@ import openai
 import base64
 import io
 
-# 1. VERBINDUNG ZU OPENAI (SICHERHEIT)
+# 1. VERBINDUNG ZU OPENAI
 if "OPENAI_API_KEY" in st.secrets:
     api_key = st.secrets["OPENAI_API_KEY"]
 else:
-    st.error("🔑 API-Key fehlt! Bitte in den Streamlit-Secrets hinterlegen.")
+    st.error("🔑 API-Key fehlt!")
     st.stop()
 
 client = openai.OpenAI(api_key=api_key)
 
-# 2. SEITEN-DESIGN
 st.set_page_config(page_title="Zauber-Stift", page_icon="🪄")
 st.title("✨ Dein Zauber-Stift")
-st.write("Mach ein Foto von einer Aufgabe oder etwas aus der Natur!")
 
-# 3. KAMERA-EINGABE
 bild_datei = st.camera_input("Foto machen")
 
 if bild_datei:
-    # Bild in das richtige Format umwandeln
     bytes_data = bild_datei.getvalue()
     base64_image = base64.b64encode(bytes_data).decode('utf-8')
 
     with st.spinner("Ich schaue es mir an... 🧙‍♂️"):
         try:
-            # A. ANFRAGE AN DAS GEHIRN (GPT-4o)
+            # A. KI ANFRAGE
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {
                         "role": "user",
                         "content": [
-                            {
-                                "type": "text", 
-                                "text": "Du bist ein freundlicher Lehrer für ein 4-jähriges Kind. Erkläre kurz und einfach, was auf dem Bild zu sehen ist oder welche Aufgabe dort steht. Max. 3 Sätze."
-                            },
-                            {
-                                "type": "image_url", 
-                                "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
-                            }
+                            {"type": "text", "text": "Erkläre kurz für ein 4-jähriges Kind, was auf dem Bild ist oder was die Aufgabe ist. Max. 3 Sätze."},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                         ],
                     }
                 ],
@@ -56,17 +46,16 @@ if bild_datei:
                 input=text_antwort
             )
             
-            # C. AUDIO FÜR DEN BROWSER VORBEREITEN (WICHTIG!)
-            audio_data = io.BytesIO(audio_response.content)
+            # C. DER TRICK: Audio direkt in die Seite einbetten (Base64)
+            audio_base64 = base64.b64encode(audio_response.content).decode('utf-8')
+            audio_tag = f'<audio controls autoplay><source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3"></audio>'
             
-            # D. ABSPIELEN
-            st.audio(audio_data, format="audio/mp3")
-            st.info("Tippe oben auf 'Play', um mich zu hören! 🔊")
+            # D. ABSPIELEN ÜBER HTML (Umgeht den Standard-Player-Fehler)
+            st.markdown(audio_tag, unsafe_allow_html=True)
+            st.info("Hörst du mich? Falls nicht, drücke auf Play im kleinen Balken oben.")
 
         except Exception as e:
-            st.error(f"Ein kleiner Fehler ist passiert: {e}")
-            st.info("Prüfe dein Guthaben bei OpenAI (Billing).")
+            st.error(f"Fehler: {e}")
 
-# --- FÜR DIE ELTERN (ZUSATZINFOS) ---
 with st.expander("Info für Eltern"):
-    st.write("Diese App nutzt KI, um Kindern Aufgaben vorzulesen. Bitte begleiten Sie Ihr Kind bei der Nutzung.")
+    st.write("Diese App nutzt KI. Bitte begleiten Sie Ihr Kind.")
