@@ -12,55 +12,49 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. DAS DESIGN (MITTIG & INTERAKTIV) ---
+# --- 2. KINDERGERECHTES DESIGN (REDUZIERT FÜR STABILITÄT) ---
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(180deg, #FFF9C4 0%, #FFFDE7 100%); }
     
-    /* Hüpf-Animation für Wartezeit */
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-    .waiting-emma { font-size: 100px; animation: bounce 1s infinite ease-in-out; text-align: center; margin-top: 20px; }
+    .waiting-emma { font-size: 80px; animation: bounce 1s infinite ease-in-out; text-align: center; margin: 20px; }
     
-    .emma-container { text-align: center; padding-top: 10px; }
-    .emma-icon { font-size: 80px; animation: bounce 2s infinite ease-in-out; }
-    .emma-label { font-size: 36px; font-family: 'Arial Black', sans-serif; color: #5D4037; }
+    .emma-container { text-align: center; padding: 10px; }
+    .emma-icon { font-size: 70px; animation: bounce 2s infinite ease-in-out; }
+    .emma-label { font-size: 30px; font-family: 'Arial Black', sans-serif; color: #5D4037; }
 
-    /* Fixe Zentrierung der Buttons auf Startseite */
+    /* Zentrierung Startseite */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         justify-content: center !important;
-        align-items: center !important;
-        gap: 20px !important;
-        padding-top: 20px;
+        gap: 15px !important;
     }
 
-    /* Kompakte, kräftige Buttons */
     .stButton > button { 
-        border-radius: 35px !important; 
-        border: 5px solid white !important; 
-        box-shadow: 0px 6px 12px rgba(0,0,0,0.1);
-        height: 125px !important;
-        width: 125px !important;
+        border-radius: 30px !important; 
+        border: 4px solid white !important; 
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+        height: 120px !important;
+        width: 120px !important;
     }
-    .stButton p { font-size: 60px !important; }
+    .stButton p { font-size: 55px !important; }
     
-    /* Farben */
     .btn-lernen button { background-color: #00B0FF !important; } 
     .btn-entdecken button { background-color: #4CAF50 !important; } 
-    .back-btn button { background-color: #FF7043 !important; height: 65px !important; width: 65px !important; }
-    .play-btn button { background-color: #FDD835 !important; height: 80px !important; width: 80px !important; }
+    .back-btn button { background-color: #FF7043 !important; height: 60px !important; width: 60px !important; }
+    .play-btn button { background-color: #FDD835 !important; height: 70px !important; width: 70px !important; }
     
-    /* Kamera Bereich ohne störendes CSS */
+    /* Kamera-Input Standard lassen für Funktionalität */
     .stCameraInput label { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
 def get_emma_audio(text):
-    # Nova Stimme: Langsam (0.85) für Kinder
     response = client.audio.speech.create(
         model="tts-1", 
         voice="nova", 
-        speed=0.85, 
+        speed=0.8, # Extra langsam und sanft
         input=text
     )
     return base64.b64encode(response.content).decode('utf-8')
@@ -68,7 +62,7 @@ def get_emma_audio(text):
 if 'seite' not in st.session_state:
     st.session_state['seite'] = 'start'
 
-# --- 3. SEITE 1: STARTSEITE ---
+# --- 3. STARTSEITE ---
 if st.session_state['seite'] == 'start':
     st.markdown('<div class="emma-container"><div class="emma-icon">🐮</div><div class="emma-label">EMMA</div></div>', unsafe_allow_html=True)
     
@@ -90,12 +84,13 @@ if st.session_state['seite'] == 'start':
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. SEITE 2: KAMERA-SEITE ---
+# --- 4. KAMERA-SEITE ---
 elif st.session_state['seite'] == 'kamera':
     if 'audio_welcome' in st.session_state:
         st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio_welcome"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         del st.session_state['audio_welcome']
 
+    # Header-Bereich
     c1, c2, c3 = st.columns([1,1,1])
     with c1:
         st.markdown('<div class="back-btn">', unsafe_allow_html=True)
@@ -105,7 +100,7 @@ elif st.session_state['seite'] == 'kamera':
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     with c2:
-        st.markdown('<div style="font-size: 60px; text-align: center;">🐮</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 50px; text-align: center;">🐮</div>', unsafe_allow_html=True)
     with c3:
         if 'audio' in st.session_state:
             st.markdown('<div class="play-btn">', unsafe_allow_html=True)
@@ -113,7 +108,8 @@ elif st.session_state['seite'] == 'kamera':
                 st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-    bild_datei = st.camera_input("")
+    # Kamera ohne umschließende Divs für maximale Browser-Kompatibilität
+    bild_datei = st.camera_input("Foto")
 
     if bild_datei:
         img_bytes = bild_datei.getvalue()
@@ -122,13 +118,12 @@ elif st.session_state['seite'] == 'kamera':
         if st.session_state.get('last_img_hash') != img_hash:
             st.session_state['last_img_hash'] = img_hash
             
-            # Die hüpfende EMMA während der Wartezeit
-            placeholder = st.empty()
-            with placeholder.container():
+            # Hüpfende EMMA während der Wartezeit
+            with st.spinner(" "): 
                 st.markdown('<div class="waiting-emma">🐮</div>', unsafe_allow_html=True)
                 
                 base64_image = base64.b64encode(img_bytes).decode('utf-8')
-                prompt = "Du bist EMMA, eine ganz liebe Kuh. Erkläre einem 5-jährigen Kind ganz sanft, was auf dem Foto ist. Nenne zuerst den Namen und dann einen kurzen Fakt. Max. 2 Sätze."
+                prompt = "Du bist die herzliche Kuh EMMA. Erkläre einem 5-jährigen Kind ganz sanft, was auf dem Foto ist. Nenne zuerst den Namen und dann einen kurzen Fakt. Max. 2 Sätze."
 
                 res = client.chat.completions.create(
                     model="gpt-4o",
@@ -139,5 +134,4 @@ elif st.session_state['seite'] == 'kamera':
                 )
                 
                 st.session_state['audio'] = get_emma_audio(res.choices[0].message.content)
-                placeholder.empty() # Entfernt die hüpfende Kuh nach dem Laden
                 st.rerun()
