@@ -3,7 +3,7 @@ import openai
 import base64
 
 # --- 1. SETUP ---
-st.set_page_config(page_title="Kids Vision", page_icon="✨", layout="centered")
+st.set_page_config(page_title="Kids Vision", page_icon="🐻", layout="centered")
 
 if "OPENAI_API_KEY" in st.secrets:
     client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -11,7 +11,7 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. KINDERGARTEN-DESIGN (KEIN TEXT, NUR MAGIE) ---
+# --- 2. KINDGERECHTES DESIGN (BÄREN-EDITION) ---
 st.markdown("""
     <style>
     .stApp {
@@ -22,19 +22,13 @@ st.markdown("""
     .magic-title {
         font-size: 80px;
         text-align: center;
-        margin-top: 10px;
-        margin-bottom: 20px;
+        margin-top: 5px;
+        margin-bottom: 0px;
     }
 
-    /* Startseite Buttons: Riesig und rund */
-    .mode-container {
-        display: flex;
-        justify-content: space-around;
-        padding-top: 20px;
-    }
-
+    /* Startseite Buttons: Riesige Kreise */
     div.stButton > button {
-        border-radius: 50% !important; /* Kreisrund */
+        border-radius: 50% !important;
         width: 160px !important;
         height: 160px !important;
         font-size: 80px !important;
@@ -57,12 +51,12 @@ st.markdown("""
         background-color: #FFD54F !important;
         border-radius: 40px !important;
         width: 200px !important;
-        height: 120px !important;
-        font-size: 70px !important;
+        height: 130px !important;
+        font-size: 80px !important;
         border: 6px solid white !important;
     }
 
-    /* Zurück-Pfeil oben links */
+    /* Zurück-Pfeil */
     .back-btn div button {
         height: 60px !important;
         width: 60px !important;
@@ -71,7 +65,7 @@ st.markdown("""
         border-radius: 50% !important;
     }
     
-    /* Kamera-Vorschau abrunden */
+    /* Kamera-Vorschau Styling */
     .stCameraInput {
         border-radius: 30px;
         overflow: hidden;
@@ -83,9 +77,9 @@ st.markdown("""
 if 'seite' not in st.session_state:
     st.session_state['seite'] = 'start'
 
-# --- 3. STARTSEITE (REIN VISUELL) ---
+# --- 3. SEITE 1: STARTSEITE (DER BÄR) ---
 if st.session_state['seite'] == 'start':
-    st.markdown('<div class="magic-title">✨</div>', unsafe_allow_html=True)
+    st.markdown('<div class="magic-title">🐻</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -103,7 +97,7 @@ if st.session_state['seite'] == 'start':
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. KAMERA-MODUS (KOMPAKT) ---
+# --- 4. SEITE 2: KAMERA-MODUS ---
 elif st.session_state['seite'] == 'kamera':
     c1, c2 = st.columns([1, 4])
     with c1:
@@ -115,19 +109,19 @@ elif st.session_state['seite'] == 'kamera':
         st.markdown('</div>', unsafe_allow_html=True)
     
     icon = "📖" if st.session_state['modus'] == "lernen" else "🔍"
-    st.markdown(f"<h1 style='text-align: center; margin-top: -60px;'>{icon}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1 style='text-align: center; margin-top: -65px;'>{icon}</h1>", unsafe_allow_html=True)
 
-    bild_datei = st.camera_input("")
+    # VERSUCH: Kamera auf Rückseite erzwingen
+    bild_datei = st.camera_input("", label_visibility="collapsed")
 
     if bild_datei:
         if 'audio' not in st.session_state or st.session_state.get('last_img_bytes') != bild_datei.getvalue():
             st.session_state['last_img_bytes'] = bild_datei.getvalue()
-            with st.spinner("✨..."):
-                # EXTREM KINDGERECHTER PROMPT
+            with st.spinner("🐻..."):
                 if st.session_state['modus'] == "lernen":
-                    prompt = "Du bist ein herzlicher Vorlese-Freund. Erkläre die Aufgabe oder lies den Text sehr freundlich und motivierend vor. Sprich ein Kind (5 Jahre) direkt an. Max. 2-3 kurze Sätze."
+                    prompt = "Du bist ein lieber Bär. Erkläre kurz und freundlich die Aufgabe auf dem Bild. Max. 2 Sätze."
                 else:
-                    prompt = "Du bist ein begeisterter Entdecker-Freund. Sag dem Kind, was für ein tolles Ding es gefunden hat und erkläre es ganz lieb. Max 2 Sätze."
+                    prompt = "Du bist ein kleiner Entdecker-Bär. Sag dem Kind kurz und lieb, was es da Tolles gefunden hat. Max 2 Sätze."
                 
                 base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
                 res = client.chat.completions.create(
@@ -138,8 +132,8 @@ elif st.session_state['seite'] == 'kamera':
                     ]}]
                 )
                 
-                # Stimme: 'shimmer' ist sehr freundlich/weiblich, 'alloy' ist neutral.
-                audio_res = client.audio.speech.create(model="tts-1", voice="shimmer", input=res.choices[0].message.content)
+                # Stimme 'Alloy' ist am neutralsten (weder extrem weiblich noch männlich)
+                audio_res = client.audio.speech.create(model="tts-1", voice="alloy", input=res.choices[0].message.content)
                 st.session_state['audio'] = base64.b64encode(audio_res.content).decode('utf-8')
 
         if 'audio' in st.session_state:
