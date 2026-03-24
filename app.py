@@ -45,10 +45,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Hilfsfunktion für Audio-Erzeugung (Begrüßung)
+# Hilfsfunktion für Audio-Erzeugung (Begrüßung) mit NEUER STIMME 'SHIMMER'
 def get_welcome_audio():
     text = "Hallo! Ich bin EMMI. Mach schnell ein Foto von etwas Tollem für mich!"
-    response = client.audio.speech.create(model="tts-1", voice="alloy", input=text)
+    # --- ÄNDERUNG: voice="shimmer" für weiche Frauenstimme ---
+    response = client.audio.speech.create(model="tts-1", voice="shimmer", input=text)
     return base64.b64encode(response.content).decode('utf-8')
 
 if 'seite' not in st.session_state:
@@ -113,9 +114,18 @@ elif st.session_state['seite'] == 'kamera':
             with st.spinner(" "): 
                 base64_image = base64.b64encode(img_bytes).decode('utf-8')
                 
-                prompt = "Du bist Kuh EMMI. Erkläre kurz (max 3 Sätze) für ein Kind (5 Jahre) was du siehst. Nenne einen spannenden Fakt."
-                if st.session_state['modus'] == "lernen":
-                    prompt = "Du bist Kuh EMMI. Erkläre dem Kind kurz und lieb, was auf der Buchseite zu sehen ist und hilf bei der Aufgabe."
+                # --- ÜBERARBEITETE PROMPTS FÜR KLARHEIT & KÜRZE ---
+                if st.session_state['modus'] == "entdecken":
+                    # Fokus auf direkten Einstieg und EINEN spannenden Fakt
+                    prompt = """Du bist eine herzliche, liebe Kuh. Erkläre einem Kind (5 Jahre) 
+                    direkt und einfach, was auf dem Foto zu sehen ist. Beginne sofort mit der Erklärung, 
+                    ohne Begrüßung oder Vorstellung. Nenne den Namen und einen einzigen, spannenden Fakt, 
+                    den ein Kind toll findet. Benutze max. 2-3 sehr kurze Sätze in einfacher Sprache."""
+                else:
+                    # Fokus auf liebevolle, direkte Hilfe
+                    prompt = """Du bist eine geduldige Lehrer-Kuh. Erkläre dem Kind kurz und lieb, 
+                    was auf der Buchseite zu sehen ist und hilf direkt bei der Aufgabe. Beginne sofort, 
+                    ohne Umschweife. Benutze einfache Worte und max. 3 kurze Sätze."""
 
                 res = client.chat.completions.create(
                     model="gpt-4o",
@@ -125,6 +135,7 @@ elif st.session_state['seite'] == 'kamera':
                     ]}]
                 )
                 
-                audio_res = client.audio.speech.create(model="tts-1", voice="alloy", input=res.choices[0].message.content)
+                # --- ÄNDERUNG: voice="shimmer" für die Erklärung ---
+                audio_res = client.audio.speech.create(model="tts-1", voice="shimmer", input=res.choices[0].message.content)
                 st.session_state['audio'] = base64.b64encode(audio_res.content).decode('utf-8')
                 st.rerun()
