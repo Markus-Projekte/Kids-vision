@@ -11,7 +11,7 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. KINDGERECHTES DESIGN (BÄREN-EDITION) ---
+# --- 2. ANIMIERTES DESIGN ---
 st.markdown("""
     <style>
     .stApp {
@@ -19,67 +19,79 @@ st.markdown("""
         overflow: hidden;
     }
     
-    .magic-title {
-        font-size: 80px;
-        text-align: center;
-        margin-top: 5px;
-        margin-bottom: 0px;
+    /* Animation für den Bären und den Button */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    @keyframes wiggle {
+        0% { transform: rotate(0deg); }
+        25% { transform: rotate(5deg); }
+        75% { transform: rotate(-5deg); }
+        100% { transform: rotate(0deg); }
     }
 
-    /* Startseite Buttons: Riesige Kreise */
+    .magic-bear {
+        font-size: 100px;
+        text-align: center;
+        margin-top: 0px;
+        animation: wiggle 2s infinite ease-in-out;
+    }
+
+    /* Modus-Buttons */
     div.stButton > button {
         border-radius: 50% !important;
-        width: 160px !important;
-        height: 160px !important;
-        font-size: 80px !important;
-        transition: transform 0.3s;
-        border: 8px solid white !important;
+        width: 140px !important;
+        height: 140px !important;
+        font-size: 70px !important;
+        border: 6px solid white !important;
         box-shadow: 0px 8px 15px rgba(0,0,0,0.1);
     }
     
     .btn-lernen div button { background-color: #64B5F6 !important; }
     .btn-entdecken div button { background-color: #81C784 !important; }
 
-    /* Der goldene Play-Button in der Mitte */
+    /* DER INTERAKTIVE PLAY-BUTTON */
     .play-container {
         display: flex;
-        justify-content: center;
-        margin-top: 5px;
+        flex-direction: column;
+        align-items: center;
+        margin-top: -20px; /* Weiter nach oben gerückt */
     }
     
     .play-btn div button {
         background-color: #FFD54F !important;
-        border-radius: 40px !important;
-        width: 200px !important;
+        border-radius: 50% !important;
+        width: 130px !important;
         height: 130px !important;
-        font-size: 80px !important;
-        border: 6px solid white !important;
+        font-size: 70px !important;
+        border: 8px solid #FFB300 !important;
+        animation: pulse 1.5s infinite; /* Er "atmet" */
     }
 
-    /* Zurück-Pfeil */
     .back-btn div button {
-        height: 60px !important;
-        width: 60px !important;
-        font-size: 30px !important;
+        height: 50px !important;
+        width: 50px !important;
+        font-size: 25px !important;
         background-color: #FF8A65 !important;
-        border-radius: 50% !important;
     }
     
-    /* Kamera-Vorschau Styling */
     .stCameraInput {
-        border-radius: 30px;
-        overflow: hidden;
+        border-radius: 25px;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Navigation
 if 'seite' not in st.session_state:
     st.session_state['seite'] = 'start'
 
-# --- 3. SEITE 1: STARTSEITE (DER BÄR) ---
+# --- 3. SEITE 1: START ---
 if st.session_state['seite'] == 'start':
-    st.markdown('<div class="magic-title">🐻</div>', unsafe_allow_html=True)
+    st.markdown('<div class="magic-bear">🐻</div>', unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:25px; font-family:Comic Sans MS;'>Hallo!</p>", unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -97,7 +109,7 @@ if st.session_state['seite'] == 'start':
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. SEITE 2: KAMERA-MODUS ---
+# --- 4. SEITE 2: KAMERA ---
 elif st.session_state['seite'] == 'kamera':
     c1, c2 = st.columns([1, 4])
     with c1:
@@ -109,20 +121,15 @@ elif st.session_state['seite'] == 'kamera':
         st.markdown('</div>', unsafe_allow_html=True)
     
     icon = "📖" if st.session_state['modus'] == "lernen" else "🔍"
-    st.markdown(f"<h1 style='text-align: center; margin-top: -65px;'>{icon}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1 style='text-align: center; margin-top: -55px;'>{icon}</h1>", unsafe_allow_html=True)
 
-    # VERSUCH: Kamera auf Rückseite erzwingen
-    bild_datei = st.camera_input("", label_visibility="collapsed")
+    bild_datei = st.camera_input("")
 
     if bild_datei:
         if 'audio' not in st.session_state or st.session_state.get('last_img_bytes') != bild_datei.getvalue():
             st.session_state['last_img_bytes'] = bild_datei.getvalue()
             with st.spinner("🐻..."):
-                if st.session_state['modus'] == "lernen":
-                    prompt = "Du bist ein lieber Bär. Erkläre kurz und freundlich die Aufgabe auf dem Bild. Max. 2 Sätze."
-                else:
-                    prompt = "Du bist ein kleiner Entdecker-Bär. Sag dem Kind kurz und lieb, was es da Tolles gefunden hat. Max 2 Sätze."
-                
+                prompt = "Du bist ein extrem lieber, freundlicher Kuschelbär. Erkläre kurz (2 Sätze) was du siehst. Sei sehr motivierend!"
                 base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
                 res = client.chat.completions.create(
                     model="gpt-4o",
@@ -131,14 +138,14 @@ elif st.session_state['seite'] == 'kamera':
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                     ]}]
                 )
-                
-                # Stimme 'Alloy' ist am neutralsten (weder extrem weiblich noch männlich)
                 audio_res = client.audio.speech.create(model="tts-1", voice="alloy", input=res.choices[0].message.content)
                 st.session_state['audio'] = base64.b64encode(audio_res.content).decode('utf-8')
 
         if 'audio' in st.session_state:
+            # Der Bär erscheint über dem Button, wenn er fertig ist
+            st.markdown('<div class="magic-bear" style="font-size:60px;">🐻</div>', unsafe_allow_html=True)
             st.markdown('<div class="play-container"><div class="play-btn">', unsafe_allow_html=True)
             if st.button("🔊"):
                 st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-                st.balloons()
+                st.snow() # Dezenterer Effekt als Ballons
             st.markdown('</div></div>', unsafe_allow_html=True)
