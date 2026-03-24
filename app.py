@@ -4,7 +4,7 @@ import openai
 import streamlit as st
 
 # --- 1. SETUP ---
-st.set_page_config(page_title="Kids Vision: EMMI", page_icon="🐮", layout="centered")
+st.set_page_config(page_title="Kids Vision: EMMA", page_icon="🐮", layout="centered")
 
 if "OPENAI_API_KEY" in st.secrets:
     client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -12,42 +12,52 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. KINDERGERECHTES DESIGN ---
+# --- 2. OPTIMIERTES DESIGN (MITTIG, KOMPAKT, KRÄFTIGE FARBEN) ---
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(180deg, #FFF9C4 0%, #FFFDE7 100%); }
     
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     
-    .emmi-container { text-align: center; margin-top: -20px; margin-bottom: 5px; }
-    .emmi-icon { font-size: 80px; animation: bounce 2s infinite ease-in-out; }
-    .emmi-label { font-size: 32px; font-family: 'Arial Black', sans-serif; color: #5D4037; margin-top: -5px; }
+    /* EMMA Container */
+    .emma-container { text-align: center; margin-top: -30px; margin-bottom: 5px; }
+    .emma-icon { font-size: 80px; animation: bounce 2s infinite ease-in-out; }
+    .emma-label { font-size: 32px; font-family: 'Arial Black', sans-serif; color: #5D4037; margin-top: -5px; }
 
-    .camera-instruction { text-align: center; font-size: 45px; margin-bottom: 10px; }
-
-    [data-testid="stHorizontalBlock"] { display: flex !important; justify-content: center !important; gap: 20px !important; }
+    /* Zentrierung & Button-Größe */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        justify-content: center !important; /* Zentriert die Spalten */
+        gap: 15px !important;
+        width: 100% !important;
+    }
+    
+    [data-testid="stColumn"] {
+        flex: 0 1 auto !important;
+        min-width: 120px !important; /* Etwas schmaler als vorher */
+    }
     
     .stButton > button { 
-        border-radius: 35px !important; 
-        border: 6px solid white !important; 
-        box-shadow: 0px 5px 0px rgba(0,0,0,0.05);
-        height: 150px !important;
-        width: 150px !important;
+        border-radius: 30px !important; 
+        border: 5px solid white !important; 
+        box-shadow: 0px 4px 0px rgba(0,0,0,0.05);
+        height: 120px !important; /* Kleiner als vorher */
+        width: 120px !important;  /* Kleiner als vorher */
     }
-    .stButton p { font-size: 70px !important; }
+    .stButton p { font-size: 55px !important; }
     
-    .btn-lernen button { background-color: #B3E5FC !important; } 
-    .btn-entdecken button { background-color: #C8E6C9 !important; } 
-    .back-btn button { background-color: #FFCCBC !important; height: 65px !important; width: 65px !important; }
-    .play-btn button { background-color: #FFF9C4 !important; height: 80px !important; width: 80px !important; }
+    /* Kräftigere Farben */
+    .btn-lernen button { background-color: #29B6F6 !important; } /* Kräftiges Hellblau */
+    .btn-entdecken button { background-color: #66BB6A !important; } /* Kräftiges Grün */
+    .back-btn button { background-color: #FF8A65 !important; height: 60px !important; width: 60px !important; } /* Kräftigeres Orange */
+    .play-btn button { background-color: #FFEE58 !important; height: 70px !important; width: 70px !important; } /* Kräftigeres Gelb */
     
     .stCameraInput label { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# Hilfsfunktion für Audio mit NEUER STIMME 'NOVA'
-def get_emmi_audio(text):
-    # --- ÄNDERUNG: voice="nova" für eine lebendige, herzliche Frauenstimme ---
+# Hilfsfunktion für Audio mit Stimme 'NOVA'
+def get_emma_audio(text):
     response = client.audio.speech.create(model="tts-1", voice="nova", input=text)
     return base64.b64encode(response.content).decode('utf-8')
 
@@ -56,7 +66,8 @@ if 'seite' not in st.session_state:
 
 # --- 3. SEITE 1: STARTSEITE ---
 if st.session_state['seite'] == 'start':
-    st.markdown('<div class="emmi-container"><div class="emmi-icon">🐮</div><div class="emmi-label">EMMI</div></div>', unsafe_allow_html=True)
+    # Namensänderung auf EMMA
+    st.markdown('<div class="emma-container"><div class="emma-icon">🐮</div><div class="emma-label">EMMA</div></div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -64,7 +75,7 @@ if st.session_state['seite'] == 'start':
         if st.button("📚", key="lernen_btn"):
             st.session_state['modus'] = "lernen"
             st.session_state['seite'] = 'kamera'
-            st.session_state['audio_welcome'] = get_emmi_audio("Hallo! Ich bin EMMI. Mach schnell ein Foto für mich!")
+            st.session_state['audio_welcome'] = get_emma_audio("Hallo! Ich bin EMMA. Mach mir ein Foto!") # Gekürzter Begrüßungstext
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     with col2:
@@ -72,7 +83,7 @@ if st.session_state['seite'] == 'start':
         if st.button("🌍", key="entdecken_btn"):
             st.session_state['modus'] = "entdecken"
             st.session_state['seite'] = 'kamera'
-            st.session_state['audio_welcome'] = get_emmi_audio("Hallo! Ich bin EMMI. Mach schnell ein Foto für mich!")
+            st.session_state['audio_welcome'] = get_emma_audio("Hallo! Ich bin EMMA. Mach mir ein Foto!") # Gekürzter Begrüßungstext
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -99,7 +110,7 @@ elif st.session_state['seite'] == 'kamera':
                 st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="camera-instruction">📸 ✨</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align: center; font-size: 40px; margin-bottom: 10px;">📸 ✨</div>', unsafe_allow_html=True)
     bild_datei = st.camera_input("")
 
     if bild_datei:
@@ -112,8 +123,7 @@ elif st.session_state['seite'] == 'kamera':
             with st.spinner(" "): 
                 base64_image = base64.b64encode(img_bytes).decode('utf-8')
                 
-                # --- NOCH STRIKTERE ANWEISUNG FÜR KURZE ANTWORTEN ---
-                prompt = """Du bist eine herzliche Kuh. Erkläre einem 5-jährigen Kind direkt, was auf dem Foto ist. 
+                prompt = """Du bist die herzliche Kuh EMMA. Erkläre einem 5-jährigen Kind direkt, was auf dem Foto ist. 
                 Regeln:
                 1. KEINE Begrüßung, KEIN 'Ich sehe...', KEINE Vorstellung.
                 2. Nenne sofort den Namen des Objekts.
@@ -128,5 +138,5 @@ elif st.session_state['seite'] == 'kamera':
                     ]}]
                 )
                 
-                st.session_state['audio'] = get_emmi_audio(res.choices[0].message.content)
+                st.session_state['audio'] = get_emma_audio(res.choices[0].message.content)
                 st.rerun()
