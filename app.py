@@ -11,47 +11,61 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. DAS "ERZWUNGENE" NEBENEINANDER DESIGN ---
+# --- 2. DAS PASTEL-DESIGN (ENGER ZUSAMMEN) ---
 st.markdown("""
     <style>
-    .stApp { background: linear-gradient(180deg, #FFF9C4 0%, #FFECB3 100%); }
+    .stApp { background: linear-gradient(180deg, #FFF9C4 0%, #FFFDE7 100%); }
     
     .magic-cow-main { font-size: 100px; text-align: center; margin-top: 10px; }
 
-    /* ERZWINGT NEBENEINANDER AUF DEM HANDY */
+    /* ERZWINGT ENGERES NEBENEINANDER */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 10px !important;
+        justify-content: center !important; /* Zentriert die Gruppe */
+        gap: 20px !important; /* Geringerer Abstand zwischen den Buttons */
+        padding: 0 10% !important; /* Schiebt sie von den Rändern weg zur Mitte */
     }
 
     [data-testid="stColumn"] {
-        width: 50% !important;
-        flex: 1 1 auto !important;
+        width: 40% !important; /* Spalten etwas schmaler für engeren Look */
+        flex: 0 1 auto !important;
     }
 
-    /* BUTTON STYLING - Emojis wieder groß machen */
+    /* BUTTON STYLING - Weiche Farben */
     .stButton > button {
         width: 100% !important;
-        height: 180px !important; 
-        border-radius: 30px !important;
-        border: 8px solid white !important;
-        box-shadow: 0px 10px 0px rgba(0,0,0,0.1);
+        height: 160px !important; 
+        border-radius: 40px !important;
+        border: 6px solid white !important;
+        box-shadow: 0px 8px 0px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
     }
     
-    /* Die Emojis im Button-Text ansprechen */
-    .stButton p {
-        font-size: 70px !important;
-        line-height: 1 !important;
-    }
+    .stButton p { font-size: 70px !important; }
     
-    .btn-lernen button { background-color: #64B5F6 !important; }
-    .btn-entdecken button { background-color: #81C784 !important; }
+    /* Sanfte Pastelltöne */
+    .btn-lernen button { background-color: #B3E5FC !important; } /* Sanftes Blau */
+    .btn-entdecken button { background-color: #C8E6C9 !important; } /* Sanftes Grün */
 
     /* NAVIGATION OBEN */
-    .back-btn button { height: 70px !important; width: 70px !important; font-size: 35px !important; background-color: #FF8A65 !important; border-radius: 20px !important; }
-    .play-btn button { height: 70px !important; width: 70px !important; font-size: 40px !important; background-color: #FFD54F !important; border-radius: 20px !important; }
+    .back-btn button { 
+        height: 70px !important; 
+        width: 70px !important; 
+        font-size: 35px !important; 
+        background-color: #FFCCBC !important; /* Pastell-Orange */
+        border-radius: 20px !important; 
+        border: 4px solid white !important;
+    }
+    
+    .play-btn button { 
+        height: 70px !important; 
+        width: 70px !important; 
+        font-size: 40px !important; 
+        background-color: #FFF9C4 !important; /* Pastell-Gelb */
+        border-radius: 20px !important; 
+        border: 4px solid white !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -62,7 +76,6 @@ if 'seite' not in st.session_state:
 if st.session_state['seite'] == 'start':
     st.markdown('<div class="magic-cow-main">🐮</div>', unsafe_allow_html=True)
     
-    # Wir nutzen st.columns, aber unser CSS oben erzwingt das Nebeneinander
     col1, col2 = st.columns(2)
     with col1:
         st.markdown('<div class="btn-lernen">', unsafe_allow_html=True)
