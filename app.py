@@ -12,56 +12,55 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. KINDERGERECHTES DESIGN (STABIL & MITTIG) ---
+# --- 2. DAS DESIGN (MITTIG & INTERAKTIV) ---
 st.markdown("""
     <style>
-    /* Hintergrund & Font */
     .stApp { background: linear-gradient(180deg, #FFF9C4 0%, #FFFDE7 100%); }
     
-    /* EMMA Animation */
-    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    .emma-container { text-align: center; padding-top: 20px; padding-bottom: 20px; }
+    /* Hüpf-Animation für Wartezeit */
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+    .waiting-emma { font-size: 100px; animation: bounce 1s infinite ease-in-out; text-align: center; margin-top: 20px; }
+    
+    .emma-container { text-align: center; padding-top: 10px; }
     .emma-icon { font-size: 80px; animation: bounce 2s infinite ease-in-out; }
     .emma-label { font-size: 36px; font-family: 'Arial Black', sans-serif; color: #5D4037; }
 
-    /* Button-Zentrierung für Mobile */
+    /* Fixe Zentrierung der Buttons auf Startseite */
     [data-testid="stHorizontalBlock"] {
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
         gap: 20px !important;
+        padding-top: 20px;
     }
 
-    /* Kräftige, runde Buttons */
+    /* Kompakte, kräftige Buttons */
     .stButton > button { 
         border-radius: 35px !important; 
         border: 5px solid white !important; 
         box-shadow: 0px 6px 12px rgba(0,0,0,0.1);
-        height: 130px !important;
-        width: 130px !important;
-        transition: transform 0.2s;
+        height: 125px !important;
+        width: 125px !important;
     }
-    .stButton > button:active { transform: scale(0.95); }
     .stButton p { font-size: 60px !important; }
     
-    /* Button Farben */
-    .btn-lernen button { background-color: #00B0FF !important; } /* Leuchtendes Blau */
-    .btn-entdecken button { background-color: #4CAF50 !important; } /* Kräftiges Grasgrün */
-    .back-btn button { background-color: #FF7043 !important; height: 70px !important; width: 70px !important; }
+    /* Farben */
+    .btn-lernen button { background-color: #00B0FF !important; } 
+    .btn-entdecken button { background-color: #4CAF50 !important; } 
+    .back-btn button { background-color: #FF7043 !important; height: 65px !important; width: 65px !important; }
     .play-btn button { background-color: #FDD835 !important; height: 80px !important; width: 80px !important; }
     
-    /* Kamera Bereich sauber halten */
-    .stCameraInput { margin-top: 20px; border-radius: 20px; overflow: hidden; }
+    /* Kamera Bereich ohne störendes CSS */
     .stCameraInput label { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# Hilfsfunktion für Audio (Weich & Herzlich)
 def get_emma_audio(text):
-    # Wir nutzen 'nova', geben ihr aber via Text-Prompt mehr 'Gefühl'
+    # Nova Stimme: Langsam (0.85) für Kinder
     response = client.audio.speech.create(
         model="tts-1", 
         voice="nova", 
+        speed=0.85, 
         input=text
     )
     return base64.b64encode(response.content).decode('utf-8')
@@ -79,7 +78,6 @@ if st.session_state['seite'] == 'start':
         if st.button("📚", key="lernen_btn"):
             st.session_state['modus'] = "lernen"
             st.session_state['seite'] = 'kamera'
-            # Weichere Formulierung
             st.session_state['audio_welcome'] = get_emma_audio("Schau mal, ich bin EMMA! Magst du mir ein Foto machen?")
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
@@ -92,7 +90,7 @@ if st.session_state['seite'] == 'start':
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. SEITE 2: KAMERA ---
+# --- 4. SEITE 2: KAMERA-SEITE ---
 elif st.session_state['seite'] == 'kamera':
     if 'audio_welcome' in st.session_state:
         st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio_welcome"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
@@ -107,7 +105,7 @@ elif st.session_state['seite'] == 'kamera':
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     with c2:
-        st.markdown('<div style="font-size: 60px; text-align: center; margin-top: 10px;">🐮</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 60px; text-align: center;">🐮</div>', unsafe_allow_html=True)
     with c3:
         if 'audio' in st.session_state:
             st.markdown('<div class="play-btn">', unsafe_allow_html=True)
@@ -115,9 +113,6 @@ elif st.session_state['seite'] == 'kamera':
                 st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div style="text-align: center; font-size: 40px; margin-top: 10px;">📸 ✨</div>', unsafe_allow_html=True)
-    
-    # Kamera Input - Ohne CSS-Tricks drumherum für maximale Stabilität
     bild_datei = st.camera_input("")
 
     if bild_datei:
@@ -127,13 +122,13 @@ elif st.session_state['seite'] == 'kamera':
         if st.session_state.get('last_img_hash') != img_hash:
             st.session_state['last_img_hash'] = img_hash
             
-            with st.spinner(" "): 
-                base64_image = base64.b64encode(img_bytes).decode('utf-8')
+            # Die hüpfende EMMA während der Wartezeit
+            placeholder = st.empty()
+            with placeholder.container():
+                st.markdown('<div class="waiting-emma">🐮</div>', unsafe_allow_html=True)
                 
-                prompt = """Du bist EMMA, eine ganz liebe Kuh. Erkläre einem 5-jährigen Kind 
-                ganz sanft und langsam, was auf dem Foto ist. 
-                Nenne zuerst den Namen des Objekts und dann einen lieben, kurzen Fakt. 
-                Benutze einfache Worte. Max. 2 Sätze."""
+                base64_image = base64.b64encode(img_bytes).decode('utf-8')
+                prompt = "Du bist EMMA, eine ganz liebe Kuh. Erkläre einem 5-jährigen Kind ganz sanft, was auf dem Foto ist. Nenne zuerst den Namen und dann einen kurzen Fakt. Max. 2 Sätze."
 
                 res = client.chat.completions.create(
                     model="gpt-4o",
@@ -144,4 +139,5 @@ elif st.session_state['seite'] == 'kamera':
                 )
                 
                 st.session_state['audio'] = get_emma_audio(res.choices[0].message.content)
+                placeholder.empty() # Entfernt die hüpfende Kuh nach dem Laden
                 st.rerun()
