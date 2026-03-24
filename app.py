@@ -11,56 +11,69 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. XXL DESIGN & LAYOUT ---
+# --- 2. DAS "ERZWUNGENE" NEBENEINANDER DESIGN ---
 st.markdown("""
     <style>
     .stApp { background: linear-gradient(180deg, #FFF9C4 0%, #FFECB3 100%); }
     
-    /* Die Kuh begrüßt das Kind */
-    .magic-cow-main { font-size: 130px; text-align: center; margin-bottom: 20px; }
+    .magic-cow-main { font-size: 100px; text-align: center; margin-top: 10px; }
 
-    /* XXL BUTTONS NEBENEINANDER */
-    .btn-container { display: flex; gap: 20px; justify-content: center; padding: 20px; }
-    
+    /* ERZWINGT NEBENEINANDER AUF DEM HANDY */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 10px !important;
+    }
+
+    [data-testid="stColumn"] {
+        width: 50% !important;
+        flex: 1 1 auto !important;
+    }
+
+    /* BUTTON STYLING - Emojis wieder groß machen */
     .stButton > button {
         width: 100% !important;
-        height: 250px !important; 
-        font-size: 110px !important;
-        border-radius: 50px !important;
-        border: 12px solid white !important;
-        box-shadow: 0px 15px 0px rgba(0,0,0,0.1);
+        height: 180px !important; 
+        border-radius: 30px !important;
+        border: 8px solid white !important;
+        box-shadow: 0px 10px 0px rgba(0,0,0,0.1);
+    }
+    
+    /* Die Emojis im Button-Text ansprechen */
+    .stButton p {
+        font-size: 70px !important;
+        line-height: 1 !important;
     }
     
     .btn-lernen button { background-color: #64B5F6 !important; }
     .btn-entdecken button { background-color: #81C784 !important; }
 
     /* NAVIGATION OBEN */
-    .back-btn button { height: 80px !important; width: 80px !important; font-size: 40px !important; background-color: #FF8A65 !important; border-radius: 20px !important; }
-    .play-btn button { height: 80px !important; width: 80px !important; font-size: 50px !important; background-color: #FFD54F !important; border-radius: 20px !important; }
-
-    /* Kamera UI aufräumen */
-    .stCameraInput label { display: none !important; }
+    .back-btn button { height: 70px !important; width: 70px !important; font-size: 35px !important; background-color: #FF8A65 !important; border-radius: 20px !important; }
+    .play-btn button { height: 70px !important; width: 70px !important; font-size: 40px !important; background-color: #FFD54F !important; border-radius: 20px !important; }
     </style>
     """, unsafe_allow_html=True)
 
 if 'seite' not in st.session_state:
     st.session_state['seite'] = 'start'
 
-# --- 3. STARTSEITE (XXL & NEBENEINANDER) ---
+# --- 3. SEITE 1: STARTSEITE ---
 if st.session_state['seite'] == 'start':
     st.markdown('<div class="magic-cow-main">🐮</div>', unsafe_allow_html=True)
     
+    # Wir nutzen st.columns, aber unser CSS oben erzwingt das Nebeneinander
     col1, col2 = st.columns(2)
     with col1:
         st.markdown('<div class="btn-lernen">', unsafe_allow_html=True)
-        if st.button("📚"):
+        if st.button("📚", key="btn_book"):
             st.session_state['modus'] = "lernen"
             st.session_state['seite'] = 'kamera'
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     with col2:
         st.markdown('<div class="btn-entdecken">', unsafe_allow_html=True)
-        if st.button("🌍"):
+        if st.button("🌍", key="btn_world"):
             st.session_state['modus'] = "entdecken"
             st.session_state['seite'] = 'kamera'
             st.rerun()
@@ -77,7 +90,7 @@ elif st.session_state['seite'] == 'kamera':
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     with c_cow:
-        st.markdown('<div style="font-size: 60px; text-align: center;">🐮</div>', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 50px; text-align: center;">🐮</div>', unsafe_allow_html=True)
     with c_play:
         if 'audio' in st.session_state:
             st.markdown('<div class="play-btn">', unsafe_allow_html=True)
@@ -85,8 +98,7 @@ elif st.session_state['seite'] == 'kamera':
                 st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # Kamera wird sofort geladen
-    bild_datei = st.camera_input("Foto")
+    bild_datei = st.camera_input("")
 
     if bild_datei:
         if 'audio' not in st.session_state or st.session_state.get('last_img_bytes') != bild_datei.getvalue():
