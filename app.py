@@ -11,72 +11,44 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. KINDGERECHTES DESIGN (BUTTONS & KUH OBEN) ---
+# --- 2. XXL DESIGN & LAYOUT ---
 st.markdown("""
     <style>
-    .stApp {
-        background: linear-gradient(180deg, #FFF9C4 0%, #FFECB3 100%);
+    .stApp { background: linear-gradient(180deg, #FFF9C4 0%, #FFECB3 100%); }
+    
+    /* Die Kuh begrüßt das Kind */
+    .magic-cow-main { font-size: 130px; text-align: center; margin-bottom: 20px; }
+
+    /* XXL BUTTONS NEBENEINANDER */
+    .btn-container { display: flex; gap: 20px; justify-content: center; padding: 20px; }
+    
+    .stButton > button {
+        width: 100% !important;
+        height: 250px !important; 
+        font-size: 110px !important;
+        border-radius: 50px !important;
+        border: 12px solid white !important;
+        box-shadow: 0px 15px 0px rgba(0,0,0,0.1);
     }
     
-    /* Animation für die Kuh */
-    @keyframes wiggle {
-        0% { transform: rotate(0deg); }
-        25% { transform: rotate(8deg); }
-        75% { transform: rotate(-8deg); }
-        100% { transform: rotate(0deg); }
-    }
-    
-    /* Kuh-Styling für die Leiste */
-    .nav-cow {
-        font-size: 60px;
-        text-align: center;
-        animation: wiggle 2s infinite ease-in-out;
-        margin-top: -10px;
-    }
+    .btn-lernen button { background-color: #64B5F6 !important; }
+    .btn-entdecken button { background-color: #81C784 !important; }
 
-    /* Startseite Buttons */
-    .btn-lernen div button { background-color: #64B5F6 !important; border-radius: 50% !important; height: 160px; width: 160px; font-size: 80px !important; border: 8px solid white !important; }
-    .btn-entdecken div button { background-color: #81C784 !important; border-radius: 50% !important; height: 160px; width: 160px; font-size: 80px !important; border: 8px solid white !important; }
+    /* NAVIGATION OBEN */
+    .back-btn button { height: 80px !important; width: 80px !important; font-size: 40px !important; background-color: #FF8A65 !important; border-radius: 20px !important; }
+    .play-btn button { height: 80px !important; width: 80px !important; font-size: 50px !important; background-color: #FFD54F !important; border-radius: 20px !important; }
 
-    /* Zurück-Button (Links) */
-    .back-btn div button {
-        height: 75px !important;
-        width: 75px !important;
-        font-size: 35px !important;
-        background-color: #FF8A65 !important;
-        border-radius: 20px !important;
-        border: 4px solid white !important;
-    }
-
-    /* Hör-Button (Rechts) */
-    .play-btn div button {
-        height: 75px !important;
-        width: 75px !important;
-        font-size: 40px !important;
-        background-color: #FFD54F !important;
-        border-radius: 20px !important;
-        border: 4px solid white !important;
-        animation: pulse 1.5s infinite;
-    }
-    
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.08); }
-        100% { transform: scale(1); }
-    }
-
-    /* Kamera-Eingabe kompakter rücken */
-    .stCameraInput { margin-top: -20px; }
+    /* Kamera UI aufräumen */
+    .stCameraInput label { display: none !important; }
     </style>
     """, unsafe_allow_html=True)
 
 if 'seite' not in st.session_state:
     st.session_state['seite'] = 'start'
 
-# --- 3. SEITE 1: STARTSEITE ---
+# --- 3. STARTSEITE (XXL & NEBENEINANDER) ---
 if st.session_state['seite'] == 'start':
-    st.markdown('<div style="font-size: 100px; text-align: center; margin-top: 20px;">🐮</div>', unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 30px; font-family: Comic Sans MS;'>Kids Vision</p>", unsafe_allow_html=True)
+    st.markdown('<div class="magic-cow-main">🐮</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -94,50 +66,37 @@ if st.session_state['seite'] == 'start':
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. SEITE 2: KAMERA-MODUS (KOMPAKTES DASHBOARD) ---
+# --- 4. KAMERA-MODUS ---
 elif st.session_state['seite'] == 'kamera':
-    # Die "Piloten-Leiste" ganz oben
-    col_back, col_cow, col_play = st.columns([1, 1, 1])
-    
-    with col_back:
+    c_back, c_cow, c_play = st.columns([1, 1, 1])
+    with c_back:
         st.markdown('<div class="back-btn">', unsafe_allow_html=True)
         if st.button("🔙"):
             st.session_state['seite'] = 'start'
             if 'audio' in st.session_state: del st.session_state['audio']
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
-    
-    with col_cow:
-        # Die Kuh begleitet das Kind oben in der Mitte
-        st.markdown('<div class="nav-cow">🐮</div>', unsafe_allow_html=True)
-        
-    with col_play:
+    with c_cow:
+        st.markdown('<div style="font-size: 60px; text-align: center;">🐮</div>', unsafe_allow_html=True)
+    with c_play:
         if 'audio' in st.session_state:
             st.markdown('<div class="play-btn">', unsafe_allow_html=True)
             if st.button("🔊"):
                 st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-                st.snow()
             st.markdown('</div>', unsafe_allow_html=True)
-        else:
-            # Platzhalter, wenn noch kein Audio da ist (für symmetrisches Layout)
-            st.markdown('<div style="height: 75px;"></div>', unsafe_allow_html=True)
 
-    # Das Modus-Icon klein über der Kamera
-    icon = "📖" if st.session_state['modus'] == "lernen" else "🔍"
-    st.markdown(f"<p style='text-align: center; font-size: 30px; margin-bottom: 5px;'>{icon}</p>", unsafe_allow_html=True)
-
-    bild_datei = st.camera_input("")
+    # Kamera wird sofort geladen
+    bild_datei = st.camera_input("Foto")
 
     if bild_datei:
         if 'audio' not in st.session_state or st.session_state.get('last_img_bytes') != bild_datei.getvalue():
             st.session_state['last_img_bytes'] = bild_datei.getvalue()
-            with st.spinner("✨"):
-                prompt = "Du bist eine extrem liebe Kuh. Erkläre kurz (2 Sätze) für ein Kind, was du auf dem Foto siehst. Sei sehr herzlich!"
+            with st.spinner(" "):
                 base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
                 res = client.chat.completions.create(
                     model="gpt-4o",
                     messages=[{"role": "user", "content": [
-                        {"type": "text", "text": prompt},
+                        {"type": "text", "text": "Du bist eine liebe Kuh. Erkläre kurz (2 Sätze) für ein Kind, was du siehst."},
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                     ]}]
                 )
