@@ -12,7 +12,7 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. DESIGN (MIT KLAPPEN-HINWEIS & BUTTON-TRICK) ---
+# --- 2. DESIGN & SICHERHEIT ---
 if st.session_state.get('modus') == "entdeckungsreise":
     bg_color = "#E3F2FD"
     secondary_bg = "#BBDEFB"
@@ -24,30 +24,26 @@ st.markdown(f"""
     <style>
     .stApp {{ background: linear-gradient(180deg, {bg_color} 0%, {secondary_bg} 100%); }}
     
-    @keyframes bounce {{ 0%, 100% {{ transform: translateY(0); }} 50% {{ transform: translateY(-20px); }} }}
-    @keyframes wiggle {{ 0%, 100% {{ transform: rotate(-5deg); }} 50% {{ transform: rotate(5deg); }} }}
-    
+    @keyframes bounce {{ 0%, 100% {{ transform: translateY(0); }} 50% {{ transform: translateY(-15px); }} }}
     .waiting-emma {{ font-size: 80px; animation: bounce 1s infinite ease-in-out; text-align: center; margin: 20px; }}
     
     .emma-container {{ text-align: center; padding: 10px; }}
     .emma-icon {{ font-size: 70px; animation: bounce 2s infinite ease-in-out; }}
     .emma-label {{ font-size: 30px; font-family: 'Arial Black', sans-serif; color: #5D4037; }}
     
-    /* Kamera-Button optisch hervorheben */
+    /* Kamera-Button: Riesig und auffällig für Kinderhände */
     .stCameraInput button {{
         background-color: #FF5252 !important;
-        color: white !important;
+        height: 80px !important;
+        font-size: 25px !important;
+        border-radius: 20px !important;
         border: 4px solid white !important;
-        font-weight: bold !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
     }}
     
-    /* Kleiner Zeigepfeil für den Kamera-Knopf */
     .click-here {{
         text-align: center;
-        font-size: 40px;
+        font-size: 50px;
         animation: bounce 1s infinite;
-        margin-bottom: -10px;
     }}
 
     [data-testid="stHorizontalBlock"] {{ display: flex !important; justify-content: center !important; gap: 20px !important; }}
@@ -99,7 +95,6 @@ elif st.session_state['seite'] == 'kamera':
             if st.button("🔊"):
                 st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
 
-    # Visueller Hinweis über der Kamera
     st.markdown('<div class="click-here">👇</div>', unsafe_allow_html=True)
     bild_datei = st.camera_input("")
 
@@ -113,15 +108,15 @@ elif st.session_state['seite'] == 'kamera':
                 st.markdown('<div class="waiting-emma">🐮</div>', unsafe_allow_html=True)
                 base64_image = base64.b64encode(img_bytes).decode('utf-8')
                 
-                # --- PROMPT MIT KLAPPEN-LOGIK ---
+                # --- PROMPT MIT SICHERHEITS-LOGIK ---
+                safety_rules = """SICHERHEITSREGEL: Wenn das Bild Gewalt, Blut, Waffen, Sexualität oder Gruseliges zeigt, 
+                reagiere STRENG ablehnend. Sag: 'Oh, das möchte ich mir lieber nicht ansehen. Zeigst du mir was Schönes?' 
+                Beende die Antwort dann sofort."""
+
                 if st.session_state['modus'] == "entdeckungsreise":
-                    prompt = """Du bist EMMA, eine herzliche Kuh. 
-                    1. Wenn es ein BUCH ist: Lies den Text vor.
-                    2. ACHTUNG KLAPPEN: Suche nach Hinweisen auf Klappen (Laschen, Kerben). Wenn du eine siehst, sag am Ende: 'Oh, da ist ja eine Klappe! Magst du sie mal für mich aufmachen und mir zeigen?'
-                    3. Wenn es ein HEFT ist: Erkläre die Aufgabe ganz einfach.
-                    Sprich sanft und max. 3 Sätze."""
+                    prompt = f"{safety_rules} Du bist EMMA. 1. Buch: Vorlesen. 2. Klappen suchen. 3. Heft: Aufgabe erklären. Max 3 Sätze."
                 else:
-                    prompt = "Du bist die herzliche Kuh EMMA. Erkläre einem Kind sanft, was auf dem Foto ist. Name zuerst, dann ein Fakt. Max. 2 Sätze."
+                    prompt = f"{safety_rules} Du bist EMMA. Erkläre das Ding auf dem Foto kindgerecht. Max 2 Sätze."
                 
                 res = client.chat.completions.create(
                     model="gpt-4o",
