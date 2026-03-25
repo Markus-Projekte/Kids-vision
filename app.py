@@ -42,10 +42,18 @@ st.markdown("""
     /* Emojis in den Buttons */
     .stButton p { font-size: 26px !important; margin: 0; }
 
-    /* Kamera-Anpassung */
+    /* Kamera-Anpassung & Deutsche Beschriftung */
     .stCameraInput button {
         background-color: #A5D6A7 !important;
         color: white !important;
+    }
+    /* Trick für den Kamera-Button Text */
+    div[data-testid="stCameraInputButton"] button p {
+        display: none;
+    }
+    div[data-testid="stCameraInputButton"] button::after {
+        content: "📸 FOTO MACHEN";
+        font-weight: bold;
     }
 
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
@@ -91,10 +99,10 @@ elif st.session_state['seite'] == 'kamera':
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Lautsprecher Button
+    # Lautsprecher Button (Text geändert auf ANHÖREN)
     if st.session_state.get('show_audio') and 'audio' in st.session_state:
         st.markdown('<div class="btn-play">', unsafe_allow_html=True)
-        if st.button("🔊 NOCHMAL HÖREN", key="play_audio_de"):
+        if st.button("🔊 ANHÖREN", key="play_audio_de"):
             st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
