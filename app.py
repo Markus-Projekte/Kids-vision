@@ -12,10 +12,14 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. DYNAMISCHES DESIGN (FARBWECHSEL & ZENTRIERUNG) ---
-# Wir nutzen eine Variable für die Hintergrundfarbe, je nach Modus
-bg_color = "#E3F2FD" if st.session_state.get('modus') == "entdeckungsreise" else "#FFF9C4"
-secondary_bg = "#BBDEFB" if st.session_state.get('modus') == "entdeckungsreise" else "#FFFDE7"
+# --- 2. DYNAMISCHES DESIGN (FARBWECHSEL & FIXES) ---
+# Bestimmung der Farben basierend auf dem Modus
+if st.session_state.get('modus') == "entdeckungsreise":
+    bg_color = "#E3F2FD"      # Sanftes Blau
+    secondary_bg = "#BBDEFB"
+else:
+    bg_color = "#FFF9C4"      # Sonniges Gelb
+    secondary_bg = "#FFFDE7"
 
 st.markdown(f"""
     <style>
@@ -28,7 +32,6 @@ st.markdown(f"""
     .emma-icon {{ font-size: 70px; animation: bounce 2s infinite ease-in-out; }}
     .emma-label {{ font-size: 30px; font-family: 'Arial Black', sans-serif; color: #5D4037; }}
     
-    /* Buttons zentrieren */
     [data-testid="stHorizontalBlock"] {{
         display: flex !important;
         justify-content: center !important;
@@ -49,6 +52,8 @@ st.markdown(f"""
     .back-btn button {{ background-color: #FF7043 !important; height: 65px !important; width: 65px !important; }}
     .play-btn button {{ background-color: #FDD835 !important; height: 80px !important; width: 80px !important; }}
     
+    /* Kamera-Bereich: Ganz schlicht halten für maximale Stabilität */
+    .stCameraInput {{ border-radius: 20px; overflow: hidden; }}
     .stCameraInput label {{ display: none !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -62,13 +67,14 @@ def get_emma_audio(text):
     )
     return base64.b64encode(response.content).decode('utf-8')
 
+# Initialisierung der Session States
 if 'seite' not in st.session_state:
     st.session_state['seite'] = 'start'
+if 'modus' not in st.session_state:
+    st.session_state['modus'] = 'start'
 
 # --- 3. STARTSEITE ---
 if st.session_state['seite'] == 'start':
-    # Sicherstellen, dass der Modus beim Start zurückgesetzt wird für die Farbe
-    st.session_state['modus'] = "start" 
     st.markdown('<div class="emma-container"><div class="emma-icon">🐮</div><div class="emma-label">EMMA</div></div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
@@ -93,17 +99,21 @@ if st.session_state['seite'] == 'start':
 
 # --- 4. KAMERA-SEITE ---
 elif st.session_state['seite'] == 'kamera':
+    # Audio-Begrüßung
     if 'audio_welcome' in st.session_state and not st.session_state.get('welcome_played', False):
         st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio_welcome"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         st.session_state['welcome_played'] = True
 
+    # Steuerung (Zurück, EMMA-Kopf, Audio-Wiederholung)
     c1, c2, c3 = st.columns([1,1,1])
     with c1:
         st.markdown('<div class="back-btn">', unsafe_allow_html=True)
         if st.button("🔙", key="back"):
+            # GRÜNDLICHES AUFRÄUMEN beim Modus-Wechsel
             st.session_state['seite'] = 'start'
-            st.session_state['modus'] = "start"
+            st.session_state['modus'] = 'start'
             if 'audio' in st.session_state: del st.session_state['audio']
+            if 'last_img_hash' in st.session_state: del st.session_state['last_img_hash']
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     with c2:
@@ -115,6 +125,7 @@ elif st.session_state['seite'] == 'kamera':
                 st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
+    # Kamera Input
     bild_datei = st.camera_input("")
 
     if bild_datei:
