@@ -12,39 +12,41 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. STYLING ---
+# --- 2. STYLING (Prototypen-Modus) ---
 st.markdown("""
     <style>
     .stApp { background-color: #FFF9C4; }
     
+    /* Der Button als einziger Interaktionspunkt */
     .stButton > button { 
-        border-radius: 15px !important; 
-        border: 3px solid white !important; 
-        height: 70px !important; 
-        width: 100% !important;
-        font-size: 20px !important;
+        border-radius: 50px !important; 
+        height: 80px !important; 
+        font-size: 24px !important;
         font-weight: bold !important;
-        box-shadow: 0px 2px 5px rgba(0,0,0,0.1) !important;
-        margin-bottom: 10px;
-        color: #5D4037 !important;
+        background-color: #FFEB3B !important; /* Auffälliges Gelb */
+        border: 4px solid white !important;
+        box-shadow: 0px 5px 15px rgba(0,0,0,0.2) !important;
     }
 
-    .btn-buch button { background-color: #BBDEFB !important; } /* Blau [cite: 26] */
-    .btn-welt button { background-color: #C8E6C9 !important; } /* Grün [cite: 26] */
-    .btn-back button { background-color: #FFCCBC !important; } /* Koralle [cite: 26] */
-    .btn-play button { background-color: #FFF59D !important; } /* Gelb [cite: 27] */
-
-    /* Kamera-Wechsel-Button hervorheben */
-    button[title="Switch camera"] {
-        border: 5px solid #FFEB3B !important; /* Auffälliges Gelb */
-        background-color: white !important;
-        border-radius: 50% !important;
-        transform: scale(1.3);
-        box-shadow: 0px 0px 10px rgba(0,0,0,0.3) !important;
+    /* --- SIMULATION DES ZIELROHRS --- */
+    /* Wir legen einen dunklen Rahmen um die Kamera, um das Rohr zu simulieren */
+    .stCameraInput {
+        border: 10px solid #5D4037 !important;
+        border-radius: 20px !important;
+        overflow: hidden;
     }
-
-    .stCameraInput label { display: none !important; } /* [cite: 29] */
     
+    /* Hilfstext für den Abstand */
+    .status-info {
+        text-align: center;
+        background-color: white;
+        padding: 10px;
+        border-radius: 10px;
+        margin-top: 10px;
+        font-weight: bold;
+        color: #5D4037;
+    }
+
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     .finger { text-align: center; font-size: 50px; animation: bounce 1s infinite; }
     </style>
@@ -59,43 +61,31 @@ if 'seite' not in st.session_state: st.session_state['seite'] = 'start'
 # --- 3. STARTSEITE ---
 if st.session_state['seite'] == 'start':
     st.markdown('<div style="text-align:center; font-size:70px; margin-top:20px;">🐮</div>', unsafe_allow_html=True)
-    st.markdown('<h1 style="text-align:center; color:#5D4037; margin-bottom:30px;">EMMA</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align:center;">KIDS VISION</h1>', unsafe_allow_html=True)
     
-    st.markdown('<div class="btn-buch">', unsafe_allow_html=True)
-    if st.button("📚 BÜCHER ENTDECKEN", key="start_r"): # [cite: 34]
-        st.session_state.update({"modus": "entdeckungsreise", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Zeig mir dein Buch!")})
+    if st.button("📚 BÜCHER ENTDECKEN", key="start_r"):
+        st.session_state.update({"modus": "entdeckungsreise", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Leg das Gerät auf dein Buch!")})
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-        
-    st.markdown('<div class="btn-welt">', unsafe_allow_html=True)
-    if st.button("🌍 WELT ENTDECKEN", key="start_w"): # [cite: 35]
-        st.session_state.update({"modus": "dinge", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Was willst du mir zeigen?")})
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. KAMERA-SEITE ---
+# --- 4. HARDWARE-PROTOTYP SEITE ---
 elif st.session_state['seite'] == 'kamera':
     if 'welcome_audio' in st.session_state:
         st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["welcome_audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         del st.session_state['welcome_audio']
 
-    st.markdown('<div class="btn-back">', unsafe_allow_html=True)
-    if st.button("ZURÜCK ZUM START", key="nav_back_de"):
-        for k in ['audio', 'last_img_hash', 'processing', 'show_audio']: 
-            st.session_state.pop(k, None)
+    if st.button("🔙 ZURÜCK", key="nav_b"):
         st.session_state['seite'] = 'start'
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
     
+    # Der Knopf zum Anhören (wird gelb, wenn fertig)
     if st.session_state.get('show_audio') and 'audio' in st.session_state:
-        st.markdown('<div class="btn-play">', unsafe_allow_html=True)
-        if st.button("🔊 ANHÖREN", key="play_audio_de"): # [cite: 37]
+        if st.button("🔊 EMMA ANHÖREN", key="play_a"):
             st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
 
+    # Kamera mit visuellem Rahmen
+    st.markdown('<div class="status-info">Abstand prüfen: Das Bild muss hell und scharf sein!</div>', unsafe_allow_html=True)
     bild_datei = st.camera_input("Foto") 
-    st.markdown('<div class="finger">👆</div>', unsafe_allow_html=True)
-
+    
     if bild_datei:
         img_bytes = bild_datei.getvalue()
         img_hash = hashlib.md5(img_bytes).hexdigest()
@@ -106,32 +96,18 @@ elif st.session_state['seite'] == 'kamera':
             st.rerun()
 
     if st.session_state.get('processing') and bild_datei:
-        with st.spinner("Emma schaut..."):
+        with st.spinner("Emma analysiert..."):
             base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
             
-            if st.session_state['modus'] == "entdeckungsreise":
-                prompt = """Du bist EMMA. 
-                1. LIES DEN TEXT im Bild präzise vor. [cite: 40]
-                2. Wenn du Aufgaben siehst, erkläre sie kurz. [cite: 40]
-                3. NUR WENN du SICHER bist, dass Klappen da sind, frage danach. [cite: 40]
-                WICHTIG: Wenn keine Klappen da sind, schweige darüber. 
-                Max 4 Sätze."""
-            else:
-                # NEUER ERKLÄR-MODUS FÜR PFLANZEN & DINGE
-                prompt = """Du bist EMMA, eine schlaue Kuh. 
-                Erkenne, was auf dem Foto ist (z.B. eine Pflanze, ein Tier oder ein Gegenstand). 
-                Nenne zuerst den Namen des Dinges. 
-                Erkläre dann in einem Satz etwas Spannendes darüber für ein 5-jähriges Kind. 
-                Beispiel: 'Das ist ein Gänseblümchen! Es streckt morgens sein Köpfchen zur Sonne.' 
-                Maximal 2 Sätze, sehr liebenswürdig."""
+            # PROMPT FÜR HARDWARE-TEST (Erklärender)
+            prompt = """Du bist EMMA. Erkenne Dinge oder lies Text vor. 
+            Wenn das Bild zu dunkel oder unscharf ist, sag dem Kind lieb: 'Oh, es ist ein bisschen dunkel, kannst du das Licht anmachen?' 
+            Ansonsten erkläre den Inhalt kindgerecht in max 3 Sätzen."""
             
             try:
                 res = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "user", "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                    ]}]
+                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}]}]
                 )
                 st.session_state['audio'] = get_emma_audio(res.choices[0].message.content)
                 st.session_state['processing'] = False
