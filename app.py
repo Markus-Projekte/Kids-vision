@@ -12,11 +12,10 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. STYLING (Mix aus Design und Hardware-Test) ---
+# --- 2. STYLING ---
 st.markdown("""
     <style>
     .stApp { background-color: #FFF9C4; }
-    
     .stButton > button { 
         border-radius: 20px !important; 
         border: 3px solid white !important; 
@@ -28,28 +27,11 @@ st.markdown("""
         margin-bottom: 10px;
         color: #5D4037 !important;
     }
-
     .btn-buch button { background-color: #BBDEFB !important; }
     .btn-welt button { background-color: #C8E6C9 !important; }
     .btn-back button { background-color: #FFCCBC !important; }
     .btn-play button { background-color: #FFF59D !important; }
-
-    /* Zielrohr-Simulation */
-    .stCameraInput {
-        border: 8px solid #5D4037 !important;
-        border-radius: 25px !important;
-        overflow: hidden;
-    }
-    
-    .diag-hint {
-        text-align: center;
-        font-size: 14px;
-        color: #5D4037;
-        background: white;
-        padding: 5px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-    }
+    .stCameraInput { border: 8px solid #5D4037 !important; border-radius: 25px !important; overflow: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -94,7 +76,6 @@ elif st.session_state['seite'] == 'kamera':
             st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div class="diag-hint">Abstand halten & stillhalten für EMMA...</div>', unsafe_allow_html=True)
     bild_datei = st.camera_input("Kamera") 
 
     if bild_datei:
@@ -108,27 +89,21 @@ elif st.session_state['seite'] == 'kamera':
         with st.spinner("Emma schaut ganz genau hin..."):
             base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
             
-            # KOMBINIERTER PROMPT (Diagnose + Inhalt)
+            # Die Anweisungen für die KI (Prompts)
             if st.session_state['modus'] == "buch":
-                prompt = """Du bist EMMA. Deine Aufgabe: 
-                1. Prüfe kurz die Bildqualität. Wenn es zu dunkel/unscharf ist, sag es lieb.
-                2. Wenn das Bild gut ist, LIES DEN TEXT im Bild präzise vor.
-                3. Erwähne Klappen nur, wenn du sie sicher siehst. Max 4 Sätze.""" [cite: 17, 18, 19]
+                prompt_text = "Du bist EMMA. Prüfe die Bildqualität. Wenn gut, lies den Text im Bild präzise vor. Erwähne Klappen nur, wenn du sie sicher siehst. Max 4 Sätze."
             else:
-                prompt = """Du bist EMMA. Deine Aufgabe:
-                1. Prüfe die Bildqualität.
-                2. Wenn gut: Erkenne das Objekt (Pflanze, Tier, Ding) und erkläre es kindgerecht.
-                Nenne den Namen des Objekts! Max 2 Sätze.""" [cite: 20]
+                prompt_text = "Du bist EMMA. Prüfe die Bildqualität. Wenn gut: Erkenne das Objekt (Pflanze, Tier, Ding) und erkläre es kindgerecht. Nenne den Namen des Objekts! Max 2 Sätze."
             
             try:
                 res = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}]}]
+                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt_text}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}]}]
                 )
-                st.session_state['audio'] = get_emma_audio(res.choices[0].message.content) [cite: 22]
+                st.session_state['audio'] = get_emma_audio(res.choices[0].message.content)
                 st.session_state['processing'] = False
                 st.session_state['show_audio'] = True
                 st.rerun()
-            except:
+            except Exception as e:
+                st.error(f"Fehler: {e}")
                 st.session_state['processing'] = False
-                st.rerun()
