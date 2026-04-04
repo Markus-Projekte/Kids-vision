@@ -3,80 +3,127 @@ import base64
 import openai
 import streamlit as st
 
-# --- 1. SETUP (Stabil & Einfach) ---
-st.set_page_config(page_title="Kids Vision: EMMA", page_icon="📸", layout="centered")
+# --- 1. SETUP ---
+st.set_page_config(page_title="Kids Vision: EMMA", page_icon="🐮", layout="centered")
 
 if "OPENAI_API_KEY" in st.secrets:
     client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 else:
-    st.error("Bitte API-Key in den Secrets hinterlegen!")
+    st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. STYLING (Dein Zielrohr-Design) ---
+# --- 2. STYLING ---
 st.markdown("""
     <style>
     .stApp { background-color: #FFF9C4; }
     
-    /* Großer Button für Kinderhände */
     .stButton > button { 
-        border-radius: 30px !important; 
-        height: 80px !important; 
+        border-radius: 15px !important; 
+        border: 3px solid white !important; 
+        height: 70px !important; 
         width: 100% !important;
-        font-size: 24px !important;
+        font-size: 20px !important;
         font-weight: bold !important;
-        background-color: #FFF59D !important;
-        border: 4px solid white !important;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.1) !important;
+        margin-bottom: 10px;
         color: #5D4037 !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
     }
 
-    /* Simulation des Hardware-Rohrs */
-    .stCameraInput {
-        border: 10px solid #5D4037 !important;
-        border-radius: 25px !important;
+    .btn-buch button { background-color: #BBDEFB !important; } /* Blau [cite: 26] */
+    .btn-welt button { background-color: #C8E6C9 !important; } /* Grün [cite: 26] */
+    .btn-back button { background-color: #FFCCBC !important; } /* Koralle [cite: 26] */
+    .btn-play button { background-color: #FFF59D !important; } /* Gelb [cite: 27] */
+
+    /* Kamera-Wechsel-Button hervorheben */
+    button[title="Switch camera"] {
+        border: 5px solid #FFEB3B !important; /* Auffälliges Gelb */
+        background-color: white !important;
+        border-radius: 50% !important;
+        transform: scale(1.3);
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.3) !important;
     }
+
+    .stCameraInput label { display: none !important; } /* [cite: 29] */
     
-    .instruction {
-        text-align: center;
-        font-weight: bold;
-        color: #5D4037;
-        margin-bottom: 10px;
-    }
+    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .finger { text-align: center; font-size: 50px; animation: bounce 1s infinite; }
     </style>
     """, unsafe_allow_html=True)
 
 def get_emma_audio(text):
-    try:
-        response = client.audio.speech.create(model="tts-1", voice="nova", speed=0.9, input=text)
-        return base64.b64encode(response.content).decode('utf-8')
-    except:
-        return None
+    response = client.audio.speech.create(model="tts-1", voice="nova", speed=0.9, input=text)
+    return base64.b64encode(response.content).decode('utf-8')
 
-# --- 3. HAUPTSEITE ---
-st.markdown('<div style="text-align:center; font-size:60px;">🐮</div>', unsafe_allow_html=True)
-st.markdown('<h1 style="text-align:center; color:#5D4037;">KIDS VISION</h1>', unsafe_allow_html=True)
+if 'seite' not in st.session_state: st.session_state['seite'] = 'start'
 
-# Anzeige der Audio-Antwort (Falls vorhanden)
-if "audio_ready" in st.session_state:
-    st.markdown('<div class="instruction">Emma ist bereit! 👇</div>', unsafe_allow_html=True)
-    if st.button("🔊 EMMA ANHÖREN"):
-        st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio_ready"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-
-st.markdown('<div class="instruction">Schau durch das Zielrohr:</div>', unsafe_allow_html=True)
-bild_datei = st.camera_input("Kamera")
-
-# --- 4. LOGIK (Der einfache Weg) ---
-if bild_datei:
-    # Wir prüfen, ob es ein neues Bild ist
-    img_bytes = bild_datei.getvalue()
-    img_hash = hashlib.md5(img_bytes).hexdigest()
+# --- 3. STARTSEITE ---
+if st.session_state['seite'] == 'start':
+    st.markdown('<div style="text-align:center; font-size:70px; margin-top:20px;">🐮</div>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align:center; color:#5D4037; margin-bottom:30px;">EMMA</h1>', unsafe_allow_html=True)
     
-    if st.session_state.get('last_hash') != img_hash:
-        with st.spinner("Emma schaut ganz genau hin..."):
-            base64_image = base64.b64encode(img_bytes).decode('utf-8')
+    st.markdown('<div class="btn-buch">', unsafe_allow_html=True)
+    if st.button("📚 BÜCHER ENTDECKEN", key="start_r"): # [cite: 34]
+        st.session_state.update({"modus": "entdeckungsreise", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Zeig mir dein Buch!")})
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+        
+    st.markdown('<div class="btn-welt">', unsafe_allow_html=True)
+    if st.button("🌍 WELT ENTDECKEN", key="start_w"): # [cite: 35]
+        st.session_state.update({"modus": "dinge", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Was willst du mir zeigen?")})
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# --- 4. KAMERA-SEITE ---
+elif st.session_state['seite'] == 'kamera':
+    if 'welcome_audio' in st.session_state:
+        st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["welcome_audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+        del st.session_state['welcome_audio']
+
+    st.markdown('<div class="btn-back">', unsafe_allow_html=True)
+    if st.button("ZURÜCK ZUM START", key="nav_back_de"):
+        for k in ['audio', 'last_img_hash', 'processing', 'show_audio']: 
+            st.session_state.pop(k, None)
+        st.session_state['seite'] = 'start'
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    if st.session_state.get('show_audio') and 'audio' in st.session_state:
+        st.markdown('<div class="btn-play">', unsafe_allow_html=True)
+        if st.button("🔊 ANHÖREN", key="play_audio_de"): # [cite: 37]
+            st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    bild_datei = st.camera_input("Foto") 
+    st.markdown('<div class="finger">👆</div>', unsafe_allow_html=True)
+
+    if bild_datei:
+        img_bytes = bild_datei.getvalue()
+        img_hash = hashlib.md5(img_bytes).hexdigest()
+        if st.session_state.get('last_img_hash') != img_hash:
+            st.session_state['show_audio'] = False
+            st.session_state['last_img_hash'] = img_hash
+            st.session_state['processing'] = True
+            st.rerun()
+
+    if st.session_state.get('processing') and bild_datei:
+        with st.spinner("Emma schaut..."):
+            base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
             
-            # Der bewährte Prompt vom Vormittag
-            prompt = "Du bist EMMA. Erkläre dieses Foto für ein Kind in 2 bis 3 Sätzen. Wenn Text da ist, lies ihn vor."
+            if st.session_state['modus'] == "entdeckungsreise":
+                prompt = """Du bist EMMA. 
+                1. LIES DEN TEXT im Bild präzise vor. [cite: 40]
+                2. Wenn du Aufgaben siehst, erkläre sie kurz. [cite: 40]
+                3. NUR WENN du SICHER bist, dass Klappen da sind, frage danach. [cite: 40]
+                WICHTIG: Wenn keine Klappen da sind, schweige darüber. 
+                Max 4 Sätze."""
+            else:
+                # NEUER ERKLÄR-MODUS FÜR PFLANZEN & DINGE
+                prompt = """Du bist EMMA, eine schlaue Kuh. 
+                Erkenne, was auf dem Foto ist (z.B. eine Pflanze, ein Tier oder ein Gegenstand). 
+                Nenne zuerst den Namen des Dinges. 
+                Erkläre dann in einem Satz etwas Spannendes darüber für ein 5-jähriges Kind. 
+                Beispiel: 'Das ist ein Gänseblümchen! Es streckt morgens sein Köpfchen zur Sonne.' 
+                Maximal 2 Sätze, sehr liebenswürdig."""
             
             try:
                 res = client.chat.completions.create(
@@ -86,14 +133,10 @@ if bild_datei:
                         {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                     ]}]
                 )
-                
-                # Audio erstellen
-                audio_base64 = get_emma_audio(res.choices[0].message.content)
-                
-                # Speichern und Seite neu laden
-                st.session_state['audio_ready'] = audio_base64
-                st.session_state['last_hash'] = img_hash
+                st.session_state['audio'] = get_emma_audio(res.choices[0].message.content)
+                st.session_state['processing'] = False
+                st.session_state['show_audio'] = True
                 st.rerun()
-                
-            except Exception as e:
-                st.error(f"Oh weh, Emma hat einen Fehler: {e}")
+            except:
+                st.session_state['processing'] = False
+                st.rerun()
