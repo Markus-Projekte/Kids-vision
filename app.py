@@ -12,7 +12,7 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. STYLING ---
+# --- 2. STYLING (Basierend auf deinem Code [cite: 1, 2, 3, 4]) ---
 st.markdown("""
     <style>
     .stApp { background-color: #FFF9C4; }
@@ -39,7 +39,9 @@ def get_emma_audio(text):
     response = client.audio.speech.create(model="tts-1", voice="nova", speed=0.9, input=text)
     return base64.b64encode(response.content).decode('utf-8')
 
+# Initialisierung der Zustände [cite: 13]
 if 'seite' not in st.session_state: st.session_state['seite'] = 'start'
+if 'autoplay' not in st.session_state: st.session_state['autoplay'] = False
 
 # --- 3. STARTSEITE ---
 if st.session_state['seite'] == 'start':
@@ -48,31 +50,35 @@ if st.session_state['seite'] == 'start':
     
     st.markdown('<div class="btn-buch">', unsafe_allow_html=True)
     if st.button("📚 BÜCHER ENTDECKEN", key="start_r"):
-        st.session_state.update({"modus": "buch", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Zeig mir dein Buch!")})
+        st.session_state.update({"modus": "buch", "seite": "kamera", "audio": get_emma_audio("Hallo! Zeig mir dein Buch!"), "autoplay": True})
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
         
     st.markdown('<div class="btn-welt">', unsafe_allow_html=True)
     if st.button("🌍 WELT ENTDECKEN", key="start_w"):
-        st.session_state.update({"modus": "welt", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Was willst du mir zeigen?")})
+        st.session_state.update({"modus": "welt", "seite": "kamera", "audio": get_emma_audio("Hallo! Was willst du mir zeigen?"), "autoplay": True})
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 4. KAMERA- & ANALYSE-SEITE ---
 elif st.session_state['seite'] == 'kamera':
-    if 'welcome_audio' in st.session_state:
-        st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["welcome_audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-        del st.session_state['welcome_audio']
+    # Automatisches Abspielen, falls neues Audio vorhanden ist
+    if st.session_state.get('autoplay') and 'audio' in st.session_state:
+        st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+        st.session_state['autoplay'] = False
 
     st.markdown('<div class="btn-back">', unsafe_allow_html=True)
     if st.button("🔙 ZURÜCK", key="nav_back"):
-        st.session_state.update({"seite": "start", "show_audio": False})
+        for k in ['audio', 'last_img_hash', 'processing', 'autoplay']: 
+            st.session_state.pop(k, None)
+        st.session_state['seite'] = 'start'
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     
-    if st.session_state.get('show_audio') and 'audio' in st.session_state:
+    # Manueller Abspiel-Button [cite: 14]
+    if 'audio' in st.session_state:
         st.markdown('<div class="btn-play">', unsafe_allow_html=True)
-        if st.button("🔊 ANHÖREN", key="play_audio"):
+        if st.button("🔊 NOCHMAL HÖREN", key="play_audio"):
             st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -82,28 +88,28 @@ elif st.session_state['seite'] == 'kamera':
         img_bytes = bild_datei.getvalue()
         img_hash = hashlib.md5(img_bytes).hexdigest()
         if st.session_state.get('last_img_hash') != img_hash:
-            st.session_state.update({'show_audio': False, 'last_img_hash': img_hash, 'processing': True})
+            st.session_state.update({'last_img_hash': img_hash, 'processing': True, 'autoplay': False})
             st.rerun()
 
     if st.session_state.get('processing') and bild_datei:
         with st.spinner("Emma schaut ganz genau hin..."):
             base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
             
-            # Die Anweisungen für die KI (Prompts)
+            # Die Anweisungen für die KI (Prompts) [cite: 17, 18, 19, 20]
             if st.session_state['modus'] == "buch":
-                prompt_text = "Du bist EMMA. Prüfe die Bildqualität. Wenn gut, lies den Text im Bild präzise vor. Erwähne Klappen nur, wenn du sie sicher siehst. Max 4 Sätze."
+                p_text = "Du bist EMMA. Prüfe die Bildqualität. Wenn gut, lies den Text im Bild präzise vor. Erwähne Klappen nur, wenn du sie sicher siehst. Max 4 Sätze."
             else:
-                prompt_text = "Du bist EMMA. Prüfe die Bildqualität. Wenn gut: Erkenne das Objekt (Pflanze, Tier, Ding) und erkläre es kindgerecht. Nenne den Namen des Objekts! Max 2 Sätze."
+                p_text = "Du bist EMMA. Prüfe die Bildqualität. Wenn gut: Erkenne das Objekt und erkläre es kindgerecht. Nenne den Namen des Objekts! Max 2 Sätze."
             
             try:
                 res = client.chat.completions.create(
                     model="gpt-4o",
-                    messages=[{"role": "user", "content": [{"type": "text", "text": prompt_text}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}]}]
+                    messages=[{"role": "user", "content": [{"type": "text", "text": p_text}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}]}]
                 )
                 st.session_state['audio'] = get_emma_audio(res.choices[0].message.content)
                 st.session_state['processing'] = False
-                st.session_state['show_audio'] = True
+                st.session_state['autoplay'] = True # Aktiviert das automatische Abspielen nach dem Rerun
                 st.rerun()
             except Exception as e:
-                st.error(f"Fehler: {e}")
+                st.error("Fehler bei der Analyse.")
                 st.session_state['processing'] = False
