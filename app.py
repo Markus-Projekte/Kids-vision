@@ -4,7 +4,7 @@ import openai
 import streamlit as st
 
 # --- 1. SETUP ---
-st.set_page_config(page_title="Kids Vision: EMMA", page_icon="🐮", layout="centered")
+st.set_page_config(page_title="Kids Vision: Prototyp", page_icon="📸", layout="centered")
 
 if "OPENAI_API_KEY" in st.secrets:
     client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -12,43 +12,37 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. STYLING (Prototypen-Modus) ---
+# --- 2. STYLING (Optimiert für Hardware-Tests) ---
 st.markdown("""
     <style>
     .stApp { background-color: #FFF9C4; }
     
-    /* Der Button als einziger Interaktionspunkt */
+    /* Großer, haptischer Button für den Prototyp */
     .stButton > button { 
-        border-radius: 50px !important; 
+        border-radius: 40px !important; 
         height: 80px !important; 
-        font-size: 24px !important;
+        font-size: 22px !important;
         font-weight: bold !important;
-        background-color: #FFEB3B !important; /* Auffälliges Gelb */
+        background-color: #FFEB3B !important;
         border: 4px solid white !important;
         box-shadow: 0px 5px 15px rgba(0,0,0,0.2) !important;
+        color: #5D4037 !important;
     }
 
-    /* --- SIMULATION DES ZIELROHRS --- */
-    /* Wir legen einen dunklen Rahmen um die Kamera, um das Rohr zu simulieren */
+    /* Simulation des Zielrohr-Ausschnitts */
     .stCameraInput {
-        border: 10px solid #5D4037 !important;
-        border-radius: 20px !important;
+        border: 12px solid #5D4037 !important;
+        border-radius: 30px !important;
         overflow: hidden;
     }
     
-    /* Hilfstext für den Abstand */
-    .status-info {
-        text-align: center;
-        background-color: white;
-        padding: 10px;
-        border-radius: 10px;
-        margin-top: 10px;
-        font-weight: bold;
-        color: #5D4037;
+    .diag-box {
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 15px;
+        border: 2px dashed #5D4037;
+        margin-bottom: 20px;
     }
-
-    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    .finger { text-align: center; font-size: 50px; animation: bounce 1s infinite; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -61,30 +55,33 @@ if 'seite' not in st.session_state: st.session_state['seite'] = 'start'
 # --- 3. STARTSEITE ---
 if st.session_state['seite'] == 'start':
     st.markdown('<div style="text-align:center; font-size:70px; margin-top:20px;">🐮</div>', unsafe_allow_html=True)
-    st.markdown('<h1 style="text-align:center;">KIDS VISION</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 style="text-align:center;">KIDS VISION PROTOTYP</h1>', unsafe_allow_html=True)
     
-    if st.button("📚 BÜCHER ENTDECKEN", key="start_r"):
-        st.session_state.update({"modus": "entdeckungsreise", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Leg das Gerät auf dein Buch!")})
+    if st.button("🚀 TEST-MODUS STARTEN", key="start_test"):
+        st.session_state.update({"seite": "kamera", "welcome_audio": get_emma_audio("Prototyp bereit. Teste jetzt den Abstand!")})
         st.rerun()
 
-# --- 4. HARDWARE-PROTOTYP SEITE ---
+# --- 4. DIAGNOSE- & KAMERA-SEITE ---
 elif st.session_state['seite'] == 'kamera':
     if 'welcome_audio' in st.session_state:
         st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["welcome_audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         del st.session_state['welcome_audio']
 
-    if st.button("🔙 ZURÜCK", key="nav_b"):
-        st.session_state['seite'] = 'start'
-        st.rerun()
+    col1, col2 = st.columns([1, 4])
+    with col1:
+        if st.button("🔙", key="nav_b"):
+            st.session_state['seite'] = 'start'
+            st.rerun()
     
-    # Der Knopf zum Anhören (wird gelb, wenn fertig)
+    # Audio-Button (erscheint nach Analyse)
     if st.session_state.get('show_audio') and 'audio' in st.session_state:
-        if st.button("🔊 EMMA ANHÖREN", key="play_a"):
+        if st.button("🔊 ANHÖREN", key="play_a"):
             st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
 
-    # Kamera mit visuellem Rahmen
-    st.markdown('<div class="status-info">Abstand prüfen: Das Bild muss hell und scharf sein!</div>', unsafe_allow_html=True)
-    bild_datei = st.camera_input("Foto") 
+    # Diagnose-Anzeige für dich
+    st.markdown('<div class="diag-box"><b>Diagnose:</b> Bewege das Handy, bis der Text im Rahmen scharf und hell ist.</div>', unsafe_allow_html=True)
+    
+    bild_datei = st.camera_input("Ziel-Kamera") 
     
     if bild_datei:
         img_bytes = bild_datei.getvalue()
@@ -96,13 +93,15 @@ elif st.session_state['seite'] == 'kamera':
             st.rerun()
 
     if st.session_state.get('processing') and bild_datei:
-        with st.spinner("Emma analysiert..."):
+        with st.spinner("EMMA prüft Bildqualität..."):
             base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
             
-            # PROMPT FÜR HARDWARE-TEST (Erklärender)
-            prompt = """Du bist EMMA. Erkenne Dinge oder lies Text vor. 
-            Wenn das Bild zu dunkel oder unscharf ist, sag dem Kind lieb: 'Oh, es ist ein bisschen dunkel, kannst du das Licht anmachen?' 
-            Ansonsten erkläre den Inhalt kindgerecht in max 3 Sätzen."""
+            # DIAGNOSE-PROMPT
+            prompt = """Du bist EMMA und hilfst beim Testen eines Hardware-Geräts.
+            1. Beurteile ZUERST kurz die Bildqualität (Licht, Schärfe). 
+            2. Wenn das Bild schlecht ist, sag: 'Oh, ich brauche ein bisschen mehr Licht oder Ruhe für ein scharfes Bild!'
+            3. Wenn das Bild gut ist, lies den Text vor oder erkläre das Objekt kindgerecht.
+            Antworte kurz und präzise (max. 3 Sätze)."""
             
             try:
                 res = client.chat.completions.create(
