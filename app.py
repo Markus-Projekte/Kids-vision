@@ -66,7 +66,7 @@ if st.session_state['seite'] == 'start':
     st.markdown('<h1 style="text-align:center; color:#5D4037; margin-bottom:30px;">EMMA</h1>', unsafe_allow_html=True)
     
     st.markdown('<div class="btn-buch">', unsafe_allow_html=True)
-    if st.button("📚 BÜCHER ENTDECKEN", key="start_r"):
+    if st.button("📚 BÜCHER LESEN", key="start_r"):
         st.session_state.update({"modus": "entdeckungsreise", "seite": "kamera", "welcome_audio": get_emma_audio("Hallo! Zeig mir dein Buch!")})
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
