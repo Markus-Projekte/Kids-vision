@@ -12,7 +12,7 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. STYLING (Der bewährte Look) ---
+# --- 2. STYLING ---
 st.markdown("""
     <style>
     .stApp { background-color: #FFF9C4; }
@@ -29,19 +29,26 @@ st.markdown("""
         color: #5D4037 !important;
     }
 
-    .btn-buch button { background-color: #BBDEFB !important; }
-    .btn-welt button { background-color: #C8E6C9 !important; }
-    .btn-back button { background-color: #FFCCBC !important; }
-    .btn-play button { background-color: #FFF59D !important; }
+    /* Farben */
+    .btn-buch button { background-color: #BBDEFB !important; } /* Blau */
+    .btn-welt button { background-color: #C8E6C9 !important; } /* Grün */
+    .btn-back button { background-color: #FFCCBC !important; } /* Koralle */
+    .btn-play button { background-color: #FFF59D !important; } /* Gelb */
 
-    .stCameraInput label { display: none !important; }
+    /* Emojis */
+    .stButton p { font-size: 26px !important; margin: 0; }
+
+    /* Kamera-Anpassung & FOTO MACHEN Button */
+    .stCameraInput label { display: none !important; } /* Versteckt das 'Kamera' Label */
     .stCameraInput button {
-        background-color: #A5D6A7 !important;
+        background-color: #A5D6A7 !important; /* Grün */
         color: white !important;
         border: 2px solid white !important;
         font-weight: bold !important;
+        font-size: 18px !important;
     }
     
+    /* Animation */
     @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     .finger { text-align: center; font-size: 50px; animation: bounce 1s infinite; }
     </style>
@@ -76,20 +83,23 @@ elif st.session_state['seite'] == 'kamera':
         st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["welcome_audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         del st.session_state['welcome_audio']
 
+    # Zurück-Button
     st.markdown('<div class="btn-back">', unsafe_allow_html=True)
-    if st.button("ZURÜCK ZUM START", key="nav_back"):
+    if st.button("ZURÜCK ZUM START", key="nav_back_de"):
         for k in ['audio', 'last_img_hash', 'processing', 'show_audio']: 
             st.session_state.pop(k, None)
         st.session_state['seite'] = 'start'
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     
+    # Lautsprecher Button (Geänderter Text!)
     if st.session_state.get('show_audio') and 'audio' in st.session_state:
         st.markdown('<div class="btn-play">', unsafe_allow_html=True)
-        if st.button("🔊 NOCHMAL HÖREN", key="play_audio"):
+        if st.button("🔊 ANHÖREN", key="play_audio_de"): # Umbenannt!
             st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # Kamera mit deutschem Button! (Label versteckt durch CSS)
     bild_datei = st.camera_input("Foto") 
     st.markdown('<div class="finger">👆</div>', unsafe_allow_html=True)
 
@@ -108,7 +118,12 @@ elif st.session_state['seite'] == 'kamera':
             base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
             
             if st.session_state['modus'] == "entdeckungsreise":
-                prompt = "Du bist EMMA. Lies den Text im Bild präzise vor. Max 4 Sätze."
+                prompt = """Du bist EMMA. 
+                1. LIES DEN TEXT im Bild präzise vor.
+                2. Wenn du Aufgaben siehst, erkläre sie kurz.
+                3. NUR WENN du SICHER bist, dass Klappen oder Laschen da sind, frage danach. 
+                WICHTIG: Wenn du KEINE Klappen siehst, verliere KEIN WORT darüber.
+                Max 4 Sätze."""
             else:
                 prompt = "Du bist EMMA. Erkläre das Foto kindgerecht in 2 Sätzen."
             
