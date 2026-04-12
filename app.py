@@ -3,8 +3,8 @@ import base64
 import openai
 import streamlit as st
 
-# --- 1. SETUP (Basierend auf deiner stabilen Version) ---
-st.set_page_config(page_title="Kids Vision: EMMA", page_icon="🐮", layout="centered")
+# --- 1. SETUP ---
+st.set_page_config(page_title="EMMA Prototyp", page_icon="🐮")
 
 if "OPENAI_API_KEY" in st.secrets:
     client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -12,32 +12,22 @@ else:
     st.error("API-Key fehlt!")
     st.stop()
 
-# --- 2. STYLING (Kombination aus Stabilität & Rohr-Optik) ---
+# --- 2. STYLING (Große Buttons für das Rohr) ---
 st.markdown("""
     <style>
     .stApp { background-color: #FFF9C4; }
-    
     .stButton > button { 
         border-radius: 20px !important; 
-        border: 3px solid white !important; 
         height: 90px !important; 
         width: 100% !important;
-        font-size: 24px !important;
+        font-size: 22px !important;
         font-weight: bold !important;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
         color: #5D4037 !important;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
     }
-
-    .btn-buch button { background-color: #BBDEFB !important; }
-    .btn-welt button { background-color: #C8E6C9 !important; }
-    .btn-back button { background-color: #FFCCBC !important; height: 60px !important; }
-    .btn-play button { background-color: #FFF59D !important; border: 5px solid white !important; height: 120px !important; }
-
-    .stCameraInput { border: 10px solid #5D4037 !important; border-radius: 30px !important; }
-    .stCameraInput label { display: none !important; }
-    
-    @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    .finger { text-align: center; font-size: 50px; animation: bounce 1s infinite; }
+    .btn-audio button { background-color: #FFEB3B !important; border: 4px solid white !important; }
+    .btn-back button { background-color: #FFCCBC !important; height: 50px !important; font-size: 16px !important; }
+    .stCameraInput { border: 8px solid #5D4037 !important; border-radius: 25px !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -45,79 +35,58 @@ def get_emma_audio(text):
     try:
         response = client.audio.speech.create(model="tts-1", voice="nova", speed=0.9, input=text)
         return base64.b64encode(response.content).decode('utf-8')
-    except:
+    except Exception:
         return None
 
 if 'seite' not in st.session_state: st.session_state['seite'] = 'start'
 
 # --- 3. STARTSEITE ---
 if st.session_state['seite'] == 'start':
-    st.markdown('<div style="text-align:center; font-size:70px; margin-top:20px;">🐮</div>', unsafe_allow_html=True)
-    st.markdown('<h1 style="text-align:center; color:#5D4037;">EMMA</h1>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="btn-buch">', unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align:center;'>🐮 EMMA</h1>", unsafe_allow_html=True)
     if st.button("📚 BÜCHER LESEN"):
-        st.session_state.update({"modus": "entdeckungsreise", "seite": "kamera"})
+        st.session_state.update({"modus": "buch", "seite": "kamera", "audio": None, "last_hash": None})
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-        
-    st.markdown('<div class="btn-welt">', unsafe_allow_html=True)
     if st.button("🌍 WELT ENTDECKEN"):
-        st.session_state.update({"modus": "dinge", "seite": "kamera"})
+        st.session_state.update({"modus": "welt", "seite": "kamera", "audio": None, "last_hash": None})
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 4. KAMERA-SEITE ---
 elif st.session_state['seite'] == 'kamera':
     st.markdown('<div class="btn-back">', unsafe_allow_html=True)
-    if st.button("ZURÜCK ZUM START"):
-        for k in ['audio', 'last_img_hash', 'processing', 'show_audio']: 
-            st.session_state.pop(k, None)
-        st.session_state['seite'] = 'start'
+    if st.button("🔙 ZURÜCK"):
+        st.session_state.update({"seite": "start", "audio": None, "last_hash": None})
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Der Anhören-Button (erscheint wie früher nach der Verarbeitung) [cite: 14]
-    if st.session_state.get('show_audio') and 'audio' in st.session_state:
-        st.markdown('<div class="btn-play">', unsafe_allow_html=True)
-        if st.button("🔊 ANHÖREN"):
-            st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
 
-    bild_datei = st.camera_input("Foto") 
-    st.markdown('<div class="finger">👆</div>', unsafe_allow_html=True)
+    bild_datei = st.camera_input("Foto machen")
 
     if bild_datei:
         img_bytes = bild_datei.getvalue()
         img_hash = hashlib.md5(img_bytes).hexdigest()
         
-        if st.session_state.get('last_img_hash') != img_hash:
-            st.session_state.update({'show_audio': False, 'last_img_hash': img_hash, 'processing': True})
-            st.rerun()
+        # Verarbeitung starten, wenn neues Bild
+        if st.session_state.get('last_hash') != img_hash:
+            with st.spinner("Emma schaut durch das Rohr..."):
+                try:
+                    base_img = base64.b64encode(img_bytes).decode('utf-8')
+                    p = "Lies den Text im Bild genau vor." if st.session_state['modus'] == "buch" else "Erkläre das Foto in 2 Sätzen für ein Kind."
+                    
+                    res = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[{"role": "user", "content": [{"type": "text", "text": p}, {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base_img}"}}]}]
+                    )
+                    
+                    audio_b64 = get_emma_audio(res.choices[0].message.content)
+                    if audio_b64:
+                        st.session_state['audio'] = audio_b64
+                        st.session_state['last_hash'] = img_hash
+                        # Kein Rerun hier, wir lassen die Anzeige direkt folgen
+                except Exception:
+                    st.warning("Verbindung hakt kurz... Bitte nochmal probieren.")
 
-    if st.session_state.get('processing') and bild_datei:
-        with st.spinner("Emma schaut..."):
-            base64_image = base64.b64encode(bild_datei.getvalue()).decode('utf-8')
-            
-            # Prompts aus deiner stabilen Datei [cite: 17, 20]
-            if st.session_state['modus'] == "entdeckungsreise":
-                prompt = "Du bist EMMA. Lies den Text im Bild präzise vor. Max 4 Sätze."
-            else:
-                prompt = "Du bist EMMA. Erkläre das Foto kindgerecht in 2 Sätzen."
-            
-            try:
-                res = client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[{"role": "user", "content": [
-                        {"type": "text", "text": prompt},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-                    ]}]
-                )
-                
-                audio_res = get_emma_audio(res.choices[0].message.content)
-                if audio_res:
-                    st.session_state.update({'audio': audio_res, 'processing': False, 'show_audio': True})
-                    st.rerun()
-            except:
-                st.session_state['processing'] = False
-                st.error("Verbindung kurz unterbrochen. Bitte nochmal versuchen.")
+    # Der Audio-Button erscheint SOFORT hier unten, wenn st.session_state['audio'] gefüllt ist
+    if st.session_state.get('audio'):
+        st.markdown('<div class="btn-audio" style="margin-top:20px;">', unsafe_allow_html=True)
+        if st.button("🔊 EMMA ANHÖREN"):
+            st.markdown(f'<audio autoplay><source src="data:audio/mp3;base64,{st.session_state["audio"]}" type="audio/mp3"></audio>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
