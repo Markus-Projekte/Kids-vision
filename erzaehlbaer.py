@@ -3,69 +3,91 @@ import base64
 import requests
 
 # --- KONFIGURATION ---
-# Stelle sicher, dass dein OpenAI Key in den Streamlit Secrets hinterlegt ist
 api_key = st.secrets["OPENAI_API_KEY"]
 
 def get_baeren_audio(text):
-    """Erzeugt die brummige Bärenstimme via OpenAI TTS"""
-    response = requests.post(
-        "https://api.openai.com/v1/audio/speech",
-        headers={"Authorization": f"Bearer {api_key}"},
-        json={
-            "model": "tts-1",
-            "voice": "onyx", 
-            "input": text
-        }
-    )
-    return response.content
+    """Wandelt Text in Sprache um. Nutzt die ersten 4000 Zeichen für Stabilität."""
+    # OpenAI TTS hat ein Limit von 4096 Zeichen.
+    safe_text = text[:4000] 
+    
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/audio/speech",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": "tts-1",
+                "voice": "onyx", # Tiefe, gemütliche Bärenstimme
+                "input": safe_text
+            }
+        )
+        if response.status_code == 200:
+            return response.content
+        else:
+            st.error(f"Fehler von OpenAI: {response.status_code}")
+            return None
+    except Exception as e:
+        st.error(f"Huiuiui, meine Stimme ist weg: {e}")
+        return None
 
 def ask_baer(image_base64):
-    """Die Story-Engine für lange Geschichten"""
+    """Generiert die Geschichte basierend auf dem Bild."""
     payload = {
         "model": "gpt-4o",
         "messages": [
             {
                 "role": "system",
-                "content": "Du bist der weise Erzählbär von KIDS VISION. Erzähle eine gemütliche, spannende Enkelgeschichte (ca. 800-1000 Wörter). Nutze Bären-Ausdrücke wie 'Huiuiui' oder 'In meinen alten Tatzen'. Sei gütig und fantasievoll."
+                "content": (
+                    "Du bist der weise Erzählbär von KIDS VISION. "
+                    "Erzähle eine gemütliche, spannende Enkelgeschichte (ca. 600-800 Wörter). "
+                    "Nutze Bären-Ausdrücke wie 'Huiuiui' oder 'In meinen alten Tatzen'. "
+                    "WICHTIG: Die Geschichte muss für 3-7 Jährige geeignet sein. "
+                    "Erfinde Legenden zu den Dingen, die du auf dem Foto siehst."
+                )
             },
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": "Was siehst du auf diesem Foto? Erzähl mir eine Legende dazu!"},
+                    {"type": "text", "text": "Was siehst du auf diesem Foto? Erzähl mir eine Geschichte!"},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
                 ]
             }
         ],
-        "max_tokens": 2500
+        "max_tokens": 2000
     }
     response = requests.post("https://api.openai.com/v1/chat/completions", 
                              headers={"Authorization": f"Bearer {api_key}"}, json=payload)
     return response.json()['choices'][0]['message']['content']
 
 # --- STREAMLIT UI ---
-st.set_page_config(page_title="KIDS VISION - Der Erzählbär", page_icon="🐻")
+st.set_page_config(page_title="KIDS VISION - Erzählbär", page_icon="🐻")
 
-# Das Logo laden (muss im selben GitHub-Ordner liegen)
+# Falls du das Bild 'baer_logo.png' in GitHub hochgeladen hast:
 try:
     st.image("baer_logo.png", width=400)
 except:
-    st.info("🐻 Der Erzählbär macht sich gerade bereit...")
+    st.title("🐻 Der Erzählbär")
 
-st.title("Der Erzählbär")
-st.write("Huiuiui! Zeig mir ein Bild, und ich erzähle dir eine Geschichte aus meiner alten Schatztruhe...")
+st.write("Willkommen in meiner Kuschelecke! Zeig mir etwas, und ich erzähl dir eine Geschichte...")
 
 img_file = st.camera_input("Foto machen")
 
 if img_file:
-    with st.spinner("Lass mich mal kurz nachdenken..."):
+    with st.spinner("Huiuiui, lass mich mal meine Brille putzen..."):
+        # 1. Bild vorbereiten
         bytes_data = img_file.getvalue()
         base64_image = base64.b64encode(bytes_data).decode('utf-8')
         
-        # Geschichte und Audio generieren
+        # 2. Text generieren
         story_text = ask_baer(base64_image)
+        
+        # 3. Audio generieren
         audio_data = get_baeren_audio(story_text)
         
-        # Anzeige
+        # 4. Anzeige
         st.subheader("Die Geschichte des Erzählbären:")
         st.write(story_text)
-        st.audio(audio_data, format="audio/mp3")
+        
+        if audio_data:
+            st.audio(audio_data, format="audio/mp3")
+        else:
+            st.warning("Ich kann die Geschichte gerade nur aufschreiben, meine Stimme braucht eine Pause.")
